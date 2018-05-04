@@ -235,11 +235,7 @@ private:
 	size_t *rec_x_id;
 	size_t *rec_z_id;
 
-	float *lambda;
-	float *mu;
-	float *rho;
 	float *absbound;
-
 	float *vx;
 	float *vy;
 	float *vz;
@@ -279,24 +275,6 @@ private:
 	float **uy_forward;
 	float **uz_forward;
 
-	void initWavefields() {
-		Dim dim(nx, nz);
-		if (sh) {
-			device::init(vy, 0, dim);
-			device::init(uy, 0, dim);
-			device::init(sxy, 0, dim);
-			device::init(szy, 0, dim);
-		}
-		if (psv) {
-			device::init(vx, 0, dim);
-			device::init(vz, 0, dim);
-			device::init(ux, 0, dim);
-			device::init(uz, 0, dim);
-			device::init(sxx, 0, dim);
-			device::init(szz, 0, dim);
-			device::init(sxz, 0, dim);
-		}
-	};
 	void divS(Dim dim) {
 		using namespace _FdmSolver;
 		if (sh) {
@@ -319,49 +297,50 @@ private:
 			updateSXZ<<<dim.dg, dim.db>>>(sxx, szz, sxz, dvxdx, dvxdz, dvzdx, dvzdz, lambda, mu, dt, dim);
 		}
 	};
+	void initWavefields() {
+		Dim dim(nx, nz);
+		if (sh) {
+			device::init(vy, 0, dim);
+			device::init(uy, 0, dim);
+			device::init(sxy, 0, dim);
+			device::init(szy, 0, dim);
+		}
+		if (psv) {
+			device::init(vx, 0, dim);
+			device::init(vz, 0, dim);
+			device::init(ux, 0, dim);
+			device::init(uz, 0, dim);
+			device::init(sxx, 0, dim);
+			device::init(szz, 0, dim);
+			device::init(sxz, 0, dim);
+		}
+	};
 	void exportSnapshot(size_t it) {
 		Dim dim(nx, nz);
 		if (wfe && (it + 1) % wfe == 0) {
 			switch (obs) {
 				case 0: {
 					if (sh) {
-						exportModel("vy", host::create(dim, vy), it + 1);
+						exportData("vy", host::create(dim, vy), it + 1);
 					}
 					if (psv) {
-						exportModel("vx", host::create(dim, vx), it + 1);
-						exportModel("vz", host::create(dim, vz), it + 1);
+						exportData("vx", host::create(dim, vx), it + 1);
+						exportData("vz", host::create(dim, vz), it + 1);
 					}
 					break;
 				}
 				case 1: {
 					if (sh) {
-						exportModel("uy", host::create(dim, uy), it + 1);
+						exportData("uy", host::create(dim, uy), it + 1);
 					}
 					if (psv) {
-						exportModel("ux", host::create(dim, ux), it + 1);
-						exportModel("uz", host::create(dim, uz), it + 1);
+						exportData("ux", host::create(dim, ux), it + 1);
+						exportData("uz", host::create(dim, uz), it + 1);
 					}
 					break;
 				}
 			}
 		}
-	};
-	void exportAxis() {
-		createDirectory(path_output);
-		Dim dim(nx, nz);
-		float *x = host::create(dim);
-		float *z = host::create(dim);
-
-		for (size_t i = 0; i < nx; i++) {
-			for (size_t j = 0; j < nz; j++) {
-				size_t k = dim.hk(i, j);
-				x[k] = i * dx;
-				z[k] = j * dz;
-			}
-		}
-
-		exportModel("x", x);
-		exportModel("z", z);
 	};
 
 public:
@@ -487,6 +466,23 @@ public:
 		);
 		vps2lm<<<dim.dg, dim.db>>>(lambda, mu, rho, dim);
 	};
+	void exportAxis() {
+		createDirectory(path_output);
+		Dim dim(nx, nz);
+		float *x = host::create(dim);
+		float *z = host::create(dim);
+
+		for (size_t i = 0; i < nx; i++) {
+			for (size_t j = 0; j < nz; j++) {
+				size_t k = dim.hk(i, j);
+				x[k] = i * dx;
+				z[k] = j * dz;
+			}
+		}
+
+		exportData("x", x);
+		exportData("z", z);
+	};
 	void runForward(int isrc, bool adjoint = false, bool trace = false, bool snapshot = false) {
 		using namespace _FdmSolver;
 		Dim dim(nx, nz);
@@ -569,8 +565,8 @@ public:
                     divVY<<<dim.dg, dim.db>>>(dvydx, dvydz, uy, dx, dz, dim);
                     divVY<<<dim.dg, dim.db>>>(dvydx_fw, dvydz_fw, dsy, dx, dz, dim);
                     host::toDevice(dsy, vy_forward[isfe], dim);
-                    interactionRhoY<<<dim.dg, dim.db>>>(k_rho, vy, dsy, ndt, dim);
-                    interactionMuY<<<dim.dg, dim.db>>>(k_mu, dvydx, dvydx_fw, dvydz, dvydz_fw, ndt, dim);
+                    if (inv_rho) interactionRhoY<<<dim.dg, dim.db>>>(k_rho, vy, dsy, ndt, dim);
+                    if (inv_mu) interactionMuY<<<dim.dg, dim.db>>>(k_mu, dvydx, dvydx_fw, dvydz, dvydz_fw, ndt, dim);
 				}
 				if (psv) {
 					host::toDevice(dsx, ux_forward[isfe], dim);
@@ -580,9 +576,9 @@ public:
 
                     host::toDevice(dsx, vx_forward[isfe], dim);
                     host::toDevice(dsz, vz_forward[isfe], dim);
-                    interactionRhoXZ<<<dim.dg, dim.db>>>(k_rho, vx, dsx, vz, dsz, ndt, dim);
-                    interactionMuXZ<<<dim.dg, dim.db>>>(k_mu, dvxdx, dvxdx_fw, dvxdz, dvxdz_fw, dvzdx, dvzdx_fw, dvzdz, dvzdz_fw, ndt, dim);
-                    interactionLambdaXZ<<<dim.dg, dim.db>>>(k_lambda, dvxdx, dvxdx_fw, dvzdz, dvzdz_fw, ndt, dim);
+                    if (inv_rho) interactionRhoXZ<<<dim.dg, dim.db>>>(k_rho, vx, dsx, vz, dsz, ndt, dim);
+                    if (inv_mu) interactionMuXZ<<<dim.dg, dim.db>>>(k_mu, dvxdx, dvxdx_fw, dvxdz, dvxdz_fw, dvzdx, dvzdx_fw, dvzdz, dvzdz_fw, ndt, dim);
+                    if (inv_lambda) interactionLambdaXZ<<<dim.dg, dim.db>>>(k_lambda, dvxdx, dvxdx_fw, dvzdz, dvzdz_fw, ndt, dim);
 				}
 			}
 

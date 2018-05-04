@@ -33,28 +33,19 @@ protected:
 	float *rec_x;
 	float *rec_z;
 
-	void exportModel(string comp, float *data, size_t n = 0) {
-		string istr = std::to_string(n);
-		for (size_t i = istr.size(); i < 6; i++) {
-			istr = "0" + istr;
-		}
-		int npt = nx * nz;
-		std::ofstream outfile(path_output + "/proc" + istr + "_" + comp + ".bin", std::ofstream::binary);
-		outfile.write(reinterpret_cast<char*>(&npt), sizeof(int));
-		outfile.write(reinterpret_cast<char*>(data), npt * sizeof(float));
-		outfile.close();
-		free(data);
-	};
-	virtual void exportAxis() = 0;
-
 public:
+	bool sh;
+	bool psv;
+	bool inv_lambda;
+	bool inv_mu;
+	bool inv_rho;
+
 	size_t nx;
 	size_t nz;
 	size_t nt;
 	size_t nsrc;
 	size_t nrec;
-	bool sh;
-	bool psv;
+
 	float dx;
 	float dz;
 	float dt;
@@ -70,6 +61,10 @@ public:
 	float *out_x;
 	float *out_y;
 	float *out_z;
+
+	float *lambda;
+	float *mu;
+	float *rho;
 
 	float *k_lambda;
 	float *k_mu;
@@ -151,13 +146,29 @@ public:
 		free(host_rec_x);
 		free(host_rec_z);
 	};
-	void exportKernels() {
-		createDirectory(path_output);
-		exportAxis();
+	void exportData(string comp, float *data, size_t n = 0) {
+		string istr = std::to_string(n);
+		for (size_t i = istr.size(); i < 6; i++) {
+			istr = "0" + istr;
+		}
+		int npt = nx * nz;
+		std::ofstream outfile(path_output + "/proc" + istr + "_" + comp + ".bin", std::ofstream::binary);
+		outfile.write(reinterpret_cast<char*>(&npt), sizeof(int));
+		outfile.write(reinterpret_cast<char*>(data), npt * sizeof(float));
+		outfile.close();
+		free(data);
+	};
+	void exportKernels(size_t n = 0) {
 		Dim dim(nx, nz);
-		exportModel("k_lambda", host::create(dim, k_lambda));
-		exportModel("k_mu", host::create(dim, k_mu));
-		exportModel("k_rho", host::create(dim, k_rho));
+		if(inv_lambda) exportData("k_lambda", host::create(dim, k_lambda), n);
+		if(inv_mu) exportData("k_mu", host::create(dim, k_mu), n);
+		if(inv_rho) exportData("k_rho", host::create(dim, k_rho), n);
+	};
+	void exportModels(size_t n = 0) {
+		Dim dim(nx, nz);
+		if(inv_lambda) exportData("lambda", host::create(dim, k_lambda), n);
+		if(inv_mu) exportData("mu", host::create(dim, k_mu), n);
+		if(inv_rho) exportData("rho", host::create(dim, k_rho), n);
 	};
 	void initKernels() {
 		Dim dim(nx, nz);
@@ -222,9 +233,15 @@ public:
 		stf_y = device::create(nsrc * nt, host_stf_y);
 		stf_z = device::create(nsrc * nt, host_stf_z);
 
-        adstf_x = device::create(nrec * nt);
-        adstf_y = device::create(nrec * nt);
-        adstf_z = device::create(nrec * nt);
+		if (config->i["mode"] != 1) {
+	        inv_lambda = (bool) config->i["inv_lambda"];
+	        inv_mu = (bool) config->i["inv_mu"];
+	        inv_rho = (bool) config->i["inv_rho"];
+
+	        adstf_x = device::create(nrec * nt);
+	        adstf_y = device::create(nrec * nt);
+	        adstf_z = device::create(nrec * nt);
+		}
 
 		if (sh) {
 			out_y = device::create(nrec * nt);
@@ -265,6 +282,7 @@ public:
 		read("vs", model_vs);
 		read("rho", model_rho);
 	};
+	virtual void exportAxis() = 0;
 	virtual void runForward(int, bool = false, bool = false, bool = false) = 0;
 	virtual void runAdjoint(int, bool = false) = 0;
 	virtual ~Solver() {

@@ -9,6 +9,7 @@ protected:
 	float **obs_z;
 
 public:
+	float ref = 1;
 	float calc(bool kernel = false) {
 		float misfit = 0;
 		size_t &nsrc = solver->nsrc, &nrec = solver->nrec, &nt = solver->nt;

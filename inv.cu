@@ -38,7 +38,8 @@ int main(int argc, const char *argv[]){
 			Misfit *misfit = module::misfit(config->i["misfit"]);
 			Optimizer *optimizer = module::optimizer(config->i["optimizer"]);
 
-			optimizer->init(config, solver, filter, misfit);
+			misfit->init(config, solver, filter);
+			optimizer->init(config, solver, misfit);
 			optimizer->run();
 			break;
 		}
@@ -56,6 +57,7 @@ int main(int argc, const char *argv[]){
 
 			misfit->init(config, solver, filter);
 			misfit->calc(true);
+			solver->exportAxis();
 			solver->exportKernels();
 			break;
 		}
