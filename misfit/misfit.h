@@ -46,9 +46,20 @@ public:
 		}
 		return misfit;
 	};
-	void generateTraces() {
+	virtual void init(Config *config, Solver *solver, Filter *filter = nullptr) {
+		this->solver = solver;
+		this->filter = filter;
+
+		solver->init(config);
+		solver->importModel(true);
+		filter->init(solver->nx, solver->nz, config->i["filter_param"]);
+
 		size_t &nsrc = solver->nsrc, &nrec = solver->nrec, &nt = solver->nt;
 		Dim dim(nt, nrec);
+		obs_x = device::create2D(nsrc, dim);
+		obs_y = device::create2D(nsrc, dim);
+		obs_z = device::create2D(nsrc, dim);
+
 		for (size_t isrc = 0; isrc < nsrc; isrc++) {
 			solver->runForward(isrc, true);
 			if (solver->sh) {
@@ -59,14 +70,7 @@ public:
 				device::copy(obs_z[isrc], solver->out_z, dim);
 			}
 		}
-	};
-	virtual void init(Solver *solver, Filter *filter = nullptr) {
-		this->solver = solver;
-		this->filter = filter;
-		size_t &nsrc = solver->nsrc, &nrec = solver->nrec, &nt = solver->nt;
-		obs_x = device::create2D(nsrc, nrec * nt);
-		obs_y = device::create2D(nsrc, nrec * nt);
-		obs_z = device::create2D(nsrc, nrec * nt);
+        solver->importModel(false);
 	};
 	virtual float calc(float *, float *, float *) = 0;
 	virtual ~Misfit() {};

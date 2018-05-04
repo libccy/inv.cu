@@ -24,6 +24,9 @@
 #include "../misfit/misfit.h"
 #include "../misfit/waveform.h"
 #include "../misfit/envelope.h"
+#include "../optimizer/optimizer.h"
+#include "../optimizer/nlcg.h"
+#include "../optimizer/lbfgs.h"
 
 namespace module {
 	Solver *solver(size_t solver_id) {
@@ -48,6 +51,13 @@ namespace module {
 		switch(misfit_id) {
 			case 0: return new WaveformMisfit();
 			case 1: return new EnvelopeMisfit();
+			default: return nullptr;
+		}
+	}
+	Optimizer *optimizer(size_t optimizer_id) {
+		switch(optimizer_id) {
+			case 0: return new NLCGOptimizer();
+			case 1: return new LBFGSOptimizer();
 			default: return nullptr;
 		}
 	}

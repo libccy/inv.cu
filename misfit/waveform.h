@@ -33,9 +33,9 @@ protected:
 	float *tw;
 
 public:
-	void init(Solver *solver, Filter *filter = nullptr) {
+	void init(Config *config, Solver *solver, Filter *filter = nullptr) {
 		using namespace _WaveformMisfit;
-		Misfit::init(solver, filter);
+		Misfit::init(config, solver, filter);
 		size_t &nt = solver->nt;
 		misfit = device::create(nt);
 		tw = device::create(nt);

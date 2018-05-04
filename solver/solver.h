@@ -140,28 +140,28 @@ public:
 	virtual void initKernels() = 0;
 	virtual void initWavefields() = 0;
 	virtual void exportKernels() = 0;
-	virtual void init(Config config) {
-		dt = config["dt"];
-		obs = std::round(config["obs"]);
-		nt = std::round(config["nt"]);
-		sfe = std::round(config["sfe"]);
-		wfe = std::round(config["wfe"]);
-		sh = (bool) std::round(config["sh"]);
-		psv = (bool) std::round(config["psv"]);
+	virtual void init(Config *config) {
+		dt = config->f["dt"];
+		obs = config->i["obs"];
+		nt = config->i["nt"];
+		sfe = config->i["sfe"];
+		wfe = config->i["wfe"];
+		sh = (bool) config->i["sh"];
+		psv = (bool) config->i["psv"];
 
-		abs_param = config["abs_param"];
-		abs_width = std::round(config["abs_width"]);
-		abs_left = (bool) std::round(config["abs_left"]);
-		abs_top = (bool) std::round(config["abs_top"]);
-		abs_right = (bool) std::round(config["abs_right"]);
-		abs_bottom = (bool) std::round(config["abs_bottom"]);
+		abs_param = config->f["abs_param"];
+		abs_width = config->i["abs_width"];
+		abs_left = (bool) config->i["abs_left"];
+		abs_top = (bool) config->i["abs_top"];
+		abs_right = (bool) config->i["abs_right"];
+		abs_bottom = (bool) config->i["abs_bottom"];
 
-		path_output = config.path["output"];
-		path_model_init = config.path["model_init"];
-		path_model_true = config.path["model_true"];
+		path_output = config->s["output"];
+		path_model_init = config->s["model_init"];
+		path_model_true = config->s["model_true"];
 
-		nsrc = config.src.size();
-		nrec = config.rec.size();
+		nsrc = config->src.size();
+		nrec = config->rec.size();
 
 		float *host_src_x = host::create(nsrc);
 		float *host_src_z = host::create(nsrc);
@@ -173,10 +173,10 @@ public:
 		float *host_stf_z = host::create(nsrc * nt);
 
 		for (size_t is = 0; is < nsrc; is++) {
-			host_src_x[is] = config.src[is][0];
-			host_src_z[is] = config.src[is][1];
-			Source *src = module::source(config.src[is][2]);
-			src->init(config.src[is] + 3, nt, dt);
+			host_src_x[is] = config->src[is][0];
+			host_src_z[is] = config->src[is][1];
+			Source *src = module::source(config->src[is][2]);
+			src->init(config->src[is] + 3, nt, dt);
 			memcpy(host_stf_x + is * nt, src->stf_x, nt * sizeof(float));
 			memcpy(host_stf_y + is * nt, src->stf_y, nt * sizeof(float));
 			memcpy(host_stf_z + is * nt, src->stf_z, nt * sizeof(float));
@@ -184,8 +184,8 @@ public:
 		}
 
 		for (size_t ir = 0; ir < nrec; ir++) {
-			host_rec_x[ir] = config.rec[ir][0];
-			host_rec_z[ir] = config.rec[ir][1];
+			host_rec_x[ir] = config->rec[ir][0];
+			host_rec_z[ir] = config->rec[ir][1];
 		}
 
 		src_x = device::create(nsrc, host_src_x);

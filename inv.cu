@@ -30,31 +30,30 @@ int main(int argc, const char *argv[]){
 		cfg["config"] = "example/checker.cfg";
 	}
 
-	Config config(cfg);
-	switch ((size_t)std::round(config["mode"])) {
+	Config *config = new Config(cfg);
+	switch (config->i["mode"]) {
 		case 0: {
-			// from here
-			// Optimizer *optimizer = module::optimizer(config["optimizer"]);
+			Solver *solver = module::solver(config->i["solver"]);
+	        Filter *filter = module::filter(config->i["filter"]);
+			Misfit *misfit = module::misfit(config->i["misfit"]);
+			Optimizer *optimizer = module::optimizer(config->i["optimizer"]);
+
+			optimizer->init(config, solver, filter, misfit);
+			optimizer->run();
 		}
 		case 1: {
-			Solver *solver = module::solver(config["solver"]);
+			Solver *solver = module::solver(config->i["solver"]);
 			solver->init(config);
 			solver->importModel(true);
 			solver->runForward(-1, false, true, true);
 			break;
 		}
 		case 2: {
-			Solver *solver = module::solver(config["solver"]);
-			solver->init(config);
-			solver->importModel(true);
+			Solver *solver = module::solver(config->i["solver"]);
+			Filter *filter = module::filter(config->i["filter"]);
+			Misfit *misfit = module::misfit(config->i["misfit"]);
 
-			Filter *filter = module::filter(config["filter"]);
-			filter->init(solver->nx, solver->nz, config["filter_param"]);
-
-			Misfit *misfit = module::misfit(config["misfit"]);
-			misfit->init(solver, filter);
-			misfit->generateTraces();
-			solver->importModel(false);
+			misfit->init(config, solver, filter);
 			misfit->calc(true);
 			solver->exportKernels();
 			break;

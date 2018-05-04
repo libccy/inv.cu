@@ -5,13 +5,12 @@ using std::map;
 using std::vector;
 
 class Config {
-private:
-	map<string, float> dict;
-
 public:
 	vector<float*> src;
 	vector<float*> rec;
-	map<string, string> path;
+	map<string, string> s;
+	map<string, float> f;
+	map<string, int> i;
 	Config(map<string, string> cfg) {
 		string data;
 		enum Section {null, config, dir, sources, stations};
@@ -55,14 +54,15 @@ public:
 								value = cfg[key];
 							}
 							if (section == dir) {
-								path[key] = value;
+								s[key] = value;
 							}
 							else {
 								std::istringstream f_valuestream(value);
 								float f_value;
 								f_valuestream >> f_value;
 								if (f_valuestream.eof() && !f_valuestream.fail()) {
-									dict[key] = f_value;
+									f[key] = f_value;
+									i[key] = std::round(f_value);
 								}
 							}
 						}
@@ -99,8 +99,5 @@ public:
 		if (section_count != 4) {
 			std::cout << "error: invalid config file" << std::endl;
 		}
-	};
-	float& operator[](string key) {
-		return dict[key];
 	};
 };

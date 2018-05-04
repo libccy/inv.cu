@@ -383,7 +383,7 @@ private:
 	};
 
 public:
-	void init(Config config) {
+	void init(Config *config) {
 		Solver::init(config);
 		using namespace _FdmSolver;
 
@@ -454,7 +454,7 @@ public:
 			dvzdz = device::create(dim);
 		}
 
-		if(std::round(config["mode"]) != 1){
+		if(config->i["mode"] != 1){
             if(sh){
                 dvydx_fw = device::create(dim);
                 dvydz_fw = device::create(dim);

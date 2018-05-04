@@ -69,8 +69,8 @@ protected:
 	}
 
 public:
-	void init(Solver *solver, Filter *filter = nullptr) {
-		Misfit::init(solver, filter);
+	void init(Config *config, Solver *solver, Filter *filter = nullptr) {
+		Misfit::init(config, solver, filter);
 		size_t &nt = solver->nt;
 		cudaMalloc((void**)&csyn, nt * sizeof(cufftComplex));
         cudaMalloc((void**)&cobs, nt * sizeof(cufftComplex));
