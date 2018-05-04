@@ -279,35 +279,6 @@ private:
 	float **uy_forward;
 	float **uz_forward;
 
-	void exportModel(string comp, float *data, size_t n = 0) {
-		string istr = std::to_string(n);
-		for (size_t i = istr.size(); i < 6; i++) {
-			istr = "0" + istr;
-		}
-		int npt = nx * nz;
-		std::ofstream outfile(path_output + "/proc" + istr + "_" + comp + ".bin", std::ofstream::binary);
-		outfile.write(reinterpret_cast<char*>(&npt), sizeof(int));
-		outfile.write(reinterpret_cast<char*>(data), npt * sizeof(float));
-		outfile.close();
-		free(data);
-	};
-	void exportAxis() {
-		createDirectory(path_output);
-		Dim dim(nx, nz);
-		float *x = host::create(dim);
-		float *z = host::create(dim);
-
-		for (size_t i = 0; i < nx; i++) {
-			for (size_t j = 0; j < nz; j++) {
-				size_t k = dim.hk(i, j);
-				x[k] = i * dx;
-				z[k] = j * dz;
-			}
-		}
-
-		exportModel("x", x);
-		exportModel("z", z);
-	};
 	void initWavefields() {
 		Dim dim(nx, nz);
 		if (sh) {
@@ -325,12 +296,6 @@ private:
 			device::init(szz, 0, dim);
 			device::init(sxz, 0, dim);
 		}
-	};
-	void initKernels() {
-		Dim dim(nx, nz);
-		device::init(k_lambda, 0, dim);
-		device::init(k_mu, 0, dim);
-		device::init(k_rho, 0, dim);
 	};
 	void divS(Dim dim) {
 		using namespace _FdmSolver;
@@ -380,6 +345,23 @@ private:
 				}
 			}
 		}
+	};
+	void exportAxis() {
+		createDirectory(path_output);
+		Dim dim(nx, nz);
+		float *x = host::create(dim);
+		float *z = host::create(dim);
+
+		for (size_t i = 0; i < nx; i++) {
+			for (size_t j = 0; j < nz; j++) {
+				size_t k = dim.hk(i, j);
+				x[k] = i * dx;
+				z[k] = j * dz;
+			}
+		}
+
+		exportModel("x", x);
+		exportModel("z", z);
 	};
 
 public:
@@ -504,14 +486,6 @@ public:
 			xmax * xmax + zmax * zmax, dx, dz, dim
 		);
 		vps2lm<<<dim.dg, dim.db>>>(lambda, mu, rho, dim);
-	};
-	void exportKernels() {
-		createDirectory(path_output);
-		exportAxis();
-		Dim dim(nx, nz);
-		exportModel("k_lambda", host::create(dim, k_lambda));
-		exportModel("k_mu", host::create(dim, k_mu));
-		exportModel("k_rho", host::create(dim, k_rho));
 	};
 	void runForward(int isrc, bool adjoint = false, bool trace = false, bool snapshot = false) {
 		using namespace _FdmSolver;

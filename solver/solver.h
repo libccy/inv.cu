@@ -33,6 +33,20 @@ protected:
 	float *rec_x;
 	float *rec_z;
 
+	void exportModel(string comp, float *data, size_t n = 0) {
+		string istr = std::to_string(n);
+		for (size_t i = istr.size(); i < 6; i++) {
+			istr = "0" + istr;
+		}
+		int npt = nx * nz;
+		std::ofstream outfile(path_output + "/proc" + istr + "_" + comp + ".bin", std::ofstream::binary);
+		outfile.write(reinterpret_cast<char*>(&npt), sizeof(int));
+		outfile.write(reinterpret_cast<char*>(data), npt * sizeof(float));
+		outfile.close();
+		free(data);
+	};
+	virtual void exportAxis() = 0;
+
 public:
 	size_t nx;
 	size_t nz;
@@ -137,9 +151,20 @@ public:
 		free(host_rec_x);
 		free(host_rec_z);
 	};
-	virtual void initKernels() = 0;
-	virtual void initWavefields() = 0;
-	virtual void exportKernels() = 0;
+	void exportKernels() {
+		createDirectory(path_output);
+		exportAxis();
+		Dim dim(nx, nz);
+		exportModel("k_lambda", host::create(dim, k_lambda));
+		exportModel("k_mu", host::create(dim, k_mu));
+		exportModel("k_rho", host::create(dim, k_rho));
+	};
+	void initKernels() {
+		Dim dim(nx, nz);
+		device::init(k_lambda, 0, dim);
+		device::init(k_mu, 0, dim);
+		device::init(k_rho, 0, dim);
+	};
 	virtual void init(Config *config) {
 		dt = config->f["dt"];
 		obs = config->i["obs"];

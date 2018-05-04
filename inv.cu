@@ -40,6 +40,7 @@ int main(int argc, const char *argv[]){
 
 			optimizer->init(config, solver, filter, misfit);
 			optimizer->run();
+			break;
 		}
 		case 1: {
 			Solver *solver = module::solver(config->i["solver"]);
