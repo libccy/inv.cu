@@ -4,5 +4,7 @@ class NLCGOptimizer : public Optimizer {
 protected:
 
 public:
-    void computeDirection(){};
+    int computeDirection(){
+        return 0;
+    };
 };

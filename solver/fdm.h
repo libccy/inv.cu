@@ -466,6 +466,12 @@ public:
 		);
 		vps2lm<<<dim.dg, dim.db>>>(lambda, mu, rho, dim);
 	};
+	void initKernels() {
+		Dim dim(nx, nz);
+		device::init(k_lambda, 0, dim);
+		device::init(k_mu, 0, dim);
+		device::init(k_rho, 0, dim);
+	};
 	void exportAxis() {
 		createDirectory(path_output);
 		Dim dim(nx, nz);

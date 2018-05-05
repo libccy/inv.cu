@@ -9,5 +9,7 @@ public:
         Optimizer::init(config, solver, misfit);
         lbfgs_mem = config->i["lbfgs_mem"];
     };
-    void computeDirection(){};
+    int computeDirection(){
+        return 0;
+    };
 };

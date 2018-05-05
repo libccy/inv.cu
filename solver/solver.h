@@ -159,22 +159,16 @@ public:
 		free(data);
 	};
 	void exportKernels(size_t n = 0) {
-		Dim dim(nx, nz);
-		if(inv_lambda) exportData("k_lambda", host::create(dim, k_lambda), n);
-		if(inv_mu) exportData("k_mu", host::create(dim, k_mu), n);
-		if(inv_rho) exportData("k_rho", host::create(dim, k_rho), n);
+		size_t len = nx * nz;
+		if(inv_lambda) exportData("k_lambda", host::create(len, k_lambda), n);
+		if(inv_mu) exportData("k_mu", host::create(len, k_mu), n);
+		if(inv_rho) exportData("k_rho", host::create(len, k_rho), n);
 	};
 	void exportModels(size_t n = 0) {
-		Dim dim(nx, nz);
-		if(inv_lambda) exportData("lambda", host::create(dim, k_lambda), n);
-		if(inv_mu) exportData("mu", host::create(dim, k_mu), n);
-		if(inv_rho) exportData("rho", host::create(dim, k_rho), n);
-	};
-	void initKernels() {
-		Dim dim(nx, nz);
-		device::init(k_lambda, 0, dim);
-		device::init(k_mu, 0, dim);
-		device::init(k_rho, 0, dim);
+		size_t len = nx * nz;
+		if(inv_lambda) exportData("lambda", host::create(len, lambda), n);
+		if(inv_mu) exportData("mu", host::create(len, mu), n);
+		if(inv_rho) exportData("rho", host::create(len, rho), n);
 	};
 	virtual void init(Config *config) {
 		dt = config->f["dt"];
@@ -282,6 +276,7 @@ public:
 		read("vs", model_vs);
 		read("rho", model_rho);
 	};
+	virtual void initKernels() = 0;
 	virtual void exportAxis() = 0;
 	virtual void runForward(int, bool = false, bool = false, bool = false) = 0;
 	virtual void runAdjoint(int, bool = false) = 0;
