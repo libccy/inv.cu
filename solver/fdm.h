@@ -543,7 +543,7 @@ public:
 		}
 
 		if (trace) {
-			exportTraces(isrc);
+			exportTraces(std::max<int>(isrc, 0), adjoint);
 		}
 	};
 	void runAdjoint(int isrc, bool snapshot = false) {

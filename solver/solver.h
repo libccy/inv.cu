@@ -70,11 +70,8 @@ public:
 	float *k_mu;
 	float *k_rho;
 
-	void exportTraces(int isrc) {
+	void exportTraces(size_t isrc, bool adjoint) {
 		createDirectory(path_output);
-		if (isrc < 0) {
-			isrc = 0;
-		}
 
 		int header1[28];
 		short int header2[2];
@@ -114,7 +111,7 @@ public:
 			for (size_t i = istr.size(); i < 6; i++) {
 				istr = "0" + istr;
 			}
-			return path_output + (obs==0?"/v":"/u") + comp + "_" + istr + ".su";
+			return path_output + ((!adjoint&&obs==0)?"/v":"/u") + comp + "_" + istr + ".su";
 		};
 		auto write = [&](string comp, float *data) {
 			std::ofstream outfile(filename(comp), std::ofstream::binary);

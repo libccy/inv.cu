@@ -47,12 +47,50 @@ public:
 		}
 		return misfit;
 	};
+	void importTraces(size_t isrc, string &path) {
+		size_t &nrec = solver->nrec, &nt = solver->nt;
+
+	    int header1[28];
+	    short int header2[2];
+	    short int header3[2];
+	    float header4[30];
+
+		float *buffer = host::create(nt * nrec);
+		auto filename = [&](string comp) {
+			string istr = std::to_string(isrc);
+			for (size_t i = istr.size(); i < 6; i++) {
+				istr = "0" + istr;
+			}
+			return path + "/u" + comp + "_" + istr + ".su";
+		};
+		auto read = [&](string comp, float *data) {
+			std::ifstream infile(filename(comp), std::ifstream::binary);
+			for (size_t ir = 0; ir < nrec; ir++) {
+				infile.read(reinterpret_cast<char*>(header1), 28 * sizeof(int));
+	            infile.read(reinterpret_cast<char*>(header2), 2 * sizeof(short int));
+	            infile.read(reinterpret_cast<char*>(header3), 2 * sizeof(short int));
+	            infile.read(reinterpret_cast<char*>(header4), 30 * sizeof(float));
+	            infile.read(reinterpret_cast<char*>(buffer + ir * nt), nt * sizeof(float));
+			}
+			infile.close();
+			host::toDevice(data, buffer, nt * nrec);
+		};
+
+		if (solver->sh) {
+			read("y", obs_y[isrc]);
+		}
+		if (solver->psv) {
+			read("x", obs_x[isrc]);
+			read("z", obs_z[isrc]);
+		}
+
+		free(buffer);
+	};
 	virtual void init(Config *config, Solver *solver, Filter *filter = nullptr) {
 		this->solver = solver;
 		this->filter = filter;
 
 		solver->init(config);
-		solver->importModel(true);
 		filter->init(solver->nx, solver->nz, config->i["filter_param"]);
 
 		size_t &nsrc = solver->nsrc, &nrec = solver->nrec, &nt = solver->nt;
@@ -61,16 +99,27 @@ public:
 		obs_y = device::create2D(nsrc, dim);
 		obs_z = device::create2D(nsrc, dim);
 
-		for (size_t isrc = 0; isrc < nsrc; isrc++) {
-			solver->runForward(isrc, true);
-			if (solver->sh) {
-				device::copy(obs_y[isrc], solver->out_y, dim);
-			}
-			if (solver->psv) {
-				device::copy(obs_x[isrc], solver->out_x, dim);
-				device::copy(obs_z[isrc], solver->out_z, dim);
+		if (config->i["trace_file"]) {
+			std::cout << "Using " << config->s["trace"] << std::endl;
+			for (size_t isrc = 0; isrc < nsrc; isrc++) {
+				this->importTraces(isrc, config->s["trace"]);
 			}
 		}
+		else {
+			std::cout << "Generating traces" << std::endl;
+			solver->importModel(true);
+			for (size_t isrc = 0; isrc < nsrc; isrc++) {
+				solver->runForward(isrc, true, true);
+				if (solver->sh) {
+					device::copy(obs_y[isrc], solver->out_y, dim);
+				}
+				if (solver->psv) {
+					device::copy(obs_x[isrc], solver->out_x, dim);
+					device::copy(obs_z[isrc], solver->out_z, dim);
+				}
+			}
+		}
+
         solver->importModel(false);
 	};
 	virtual float calc(float *, float *, float *) = 0;
