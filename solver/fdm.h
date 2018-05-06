@@ -275,7 +275,7 @@ private:
 	float **uy_forward;
 	float **uz_forward;
 
-	void divS(Dim dim) {
+	void divS(Dim &dim) {
 		using namespace _FdmSolver;
 		if (sh) {
 			divSY<<<dim.dg, dim.db>>>(dsy, sxy, szy, dx, dz, dim);
@@ -284,7 +284,7 @@ private:
 			divSXZ<<<dim.dg, dim.db>>>(dsx, dsz, sxx, szz, sxz, dx, dz, dim);
 		}
 	};
-	void divV(Dim dim) {
+	void divV(Dim &dim) {
 		using namespace _FdmSolver;
 		if(sh){
 			updateVY<<<dim.dg, dim.db>>>(vy, uy, dsy, rho, absbound, dt, dim);

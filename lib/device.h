@@ -116,17 +116,17 @@ namespace device {
 		data[k] = value;
 	}
 	template<typename T = float>
-	void copy(T*data, T *source, Dim dim) {
+	void copy(T*data, T *source, Dim &dim) {
 		_copy<<<dim.dg, dim.db>>>(data, source, dim);
 	}
 	template<typename T = float>
-	T *copy(T *source, Dim dim) {
+	T *copy(T *source, Dim &dim) {
 		T *data = create<T>(dim);
 		_copy<<<dim.dg, dim.db>>>(data, source, dim);
 		return data;
 	}
 	template<typename T = float>
-	void init(T *data, T value, Dim dim){
+	void init(T *data, T value, Dim &dim){
 		_init<<<dim.dg, dim.db>>>(data, value, dim);
 	}
 	template<typename T = float>
@@ -148,13 +148,13 @@ namespace device {
 		size_t k = dim();
 		c[k] = a[k] * b[k];
 	}
-	void calc(float *c, float ka, float *a, Dim dim) {
+	void calc(float *c, float ka, float *a, Dim &dim) {
 		_calc<<<dim.dg, dim.db>>>(c, ka, a, dim);
 	}
-	void calc(float *c, float ka, float *a, float kb, float *b, Dim dim) {
+	void calc(float *c, float ka, float *a, float kb, float *b, Dim &dim) {
 		_calc<<<dim.dg, dim.db>>>(c, ka, a, kb, b, dim);
 	}
-	void calc(float *c, float *a, float *b, Dim dim) {
+	void calc(float *c, float *a, float *b, Dim &dim) {
 		_calc<<<dim.dg, dim.db>>>(c, a, b, dim);
 	}
 	float amax(float *a, size_t len){
