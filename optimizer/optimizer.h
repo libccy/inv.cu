@@ -2,20 +2,18 @@
 
 class Optimizer {
 protected:
-    enum Parameter { lambda = 0, mu = 1, rho = 2 };
     Misfit *misfit;
     Solver *solver;
 
-    bool inv_parameter[3];
-
-    size_t inv_iteration;
-    size_t inv_cycle;
-
-    float ls_steplenmax;
-    float ls_stepleninit;
-    float ls_stepcountma;
-    float ls_thresh;
+    bool param[3];
+    size_t iter_total;
+    size_t iter_cycle;
     float unsharp_mask;
+
+    // float ls_steplenmax;
+    // float ls_stepleninit;
+    // float ls_stepcountma;
+    // float ls_thresh;
 
     float **m_new;
     float **m_old;
@@ -27,14 +25,14 @@ protected:
     float *ls_gtg;
     float *ls_gtp;
 
+    size_t iter_count;
     size_t eval_count;
-    size_t inv_count;
-    size_t ls_count;
+    // size_t ls_count;
 
     float pdot(float **a, float **b, Dim &dim) {
         float dot_ab = 0;
         for (size_t ip = 0; ip < 3; ip++) {
-            if (inv_parameter[ip]) {
+            if (param[ip]) {
                 dot_ab += device::dot(a[ip], b[ip], dim);
             }
         }
@@ -42,21 +40,21 @@ protected:
     };
     void pcalc(float **c, float ka, float **a, Dim &dim) {
         for (size_t ip = 0; ip < 3; ip++) {
-            if (inv_parameter[ip]) {
+            if (param[ip]) {
                 device::calc(c[ip], ka, a[ip], dim);
             }
         }
     };
     void pcalc(float **c, float ka, float **a, float kb, float **b, Dim &dim) {
         for (size_t ip = 0; ip < 3; ip++) {
-            if (inv_parameter[ip]) {
+            if (param[ip]) {
                 device::calc(c[ip], ka, a[ip], kb, b[ip], dim);
             }
         }
     };
     void pcopy(float **data, float **source, Dim &dim) {
         for (size_t ip = 0; ip < 3; ip++) {
-            if (inv_parameter[ip]) {
+            if (param[ip]) {
                 device::copy(data[ip], source[ip], dim);
             }
         }
@@ -69,12 +67,12 @@ public:
         solver->exportAxis();
         solver->exportModels();
 
+        iter_count = 0;
         eval_count = 0;
-        inv_count = 0;
-        ls_count = 0;
+        // ls_count = 0;
 
-        for(int iter = 0; iter < inv_iteration; iter++){
-            std:: cout << "Starting iteration " << iter + 1 << " / " << inv_iteration << std::endl;
+        for(int iter = 0; iter < iter_total; iter++){
+            std:: cout << "Starting iteration " << iter + 1 << " / " << iter_total << std::endl;
             float f = misfit->calc(true);
             if (iter == 0) misfit->ref = f;
             eval_count += 2;
@@ -97,27 +95,28 @@ public:
 
     };
     void lineSearch(float f) {
-
+        // from here
     };
     virtual int computeDirection() = 0;
     virtual void init(Config *config, Solver *solver, Misfit *misfit) {
+        enum Parameter { lambda = 0, mu = 1, rho = 2 };
         this->misfit = misfit;
         this->solver = solver;
 
-        inv_parameter[lambda] = (bool) solver->inv_lambda;
-        inv_parameter[mu] = (bool) solver->inv_mu;
-        inv_parameter[rho] = (bool) solver->inv_rho;
-        inv_iteration = config->i["inv_iteration"];
-        inv_cycle = config->i["inv_cycle"];
-
-        ls_steplenmax = config->f["ls_steplenmax"];
-        ls_stepleninit = config->f["ls_stepleninit"];
-        ls_stepcountma = config->f["ls_stepcountma"];
-        ls_thresh = config->f["ls_thresh"];
+        param[lambda] = solver->inv_lambda;
+        param[mu] = solver->inv_mu;
+        param[rho] = solver->inv_rho;
+        iter_total = config->i["iter_total"];
+        iter_cycle = config->i["iter_cycle"];
         unsharp_mask = config->f["unsharp_mask"];
 
-        ls_gtg = host::create(inv_iteration);
-        ls_gtp = host::create(inv_iteration);
+        // ls_steplenmax = config->f["ls_steplenmax"];
+        // ls_stepleninit = config->f["ls_stepleninit"];
+        // ls_stepcountma = config->f["ls_stepcountma"];
+        // ls_thresh = config->f["ls_thresh"];
+
+        ls_gtg = host::create(iter_total);
+        ls_gtp = host::create(iter_total);
 
         size_t len = solver->nx * solver->nz;
 
