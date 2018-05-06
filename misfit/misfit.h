@@ -9,7 +9,7 @@ protected:
 	float **obs_z;
 
 public:
-	float ref = 1;
+	float ref;
 	float calc(bool kernel = false) {
 		float misfit = 0;
 		size_t &nsrc = solver->nsrc, &nrec = solver->nrec, &nt = solver->nt;
@@ -18,11 +18,11 @@ public:
 			solver->initKernels();
 		}
 		if(!solver->sh){
-	        device::init(solver->adstf_y, 0, dim);
+	        device::init(solver->adstf_y, 0.0f, dim);
 	    }
 	    if(!solver->psv){
-	        device::init(solver->adstf_x, 0, dim);
-	        device::init(solver->adstf_z, 0, dim);
+	        device::init(solver->adstf_x, 0.0f, dim);
+	        device::init(solver->adstf_z, 0.0f, dim);
 	    }
 		for (size_t isrc = 0; isrc < nsrc; isrc++) {
 			solver->runForward(isrc, true);
@@ -92,6 +92,8 @@ public:
 
 		solver->init(config);
 		filter->init(solver->nx, solver->nz, config->i["filter_param"]);
+
+		ref = 1;
 
 		size_t &nsrc = solver->nsrc, &nrec = solver->nrec, &nt = solver->nt;
 		Dim dim(nt, nrec);

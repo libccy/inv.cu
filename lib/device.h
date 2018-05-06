@@ -106,62 +106,56 @@ namespace device {
 	}
 
 	template<typename T = float>
-	__global__ void _calc(T *c, float ka, T *a, Dim dim) {
+	__global__ void _copy(T *data, T *source, Dim dim) {
 		size_t k = dim();
-		c[k] = ka * a[k];
+		data[k] = source[k];
 	}
 	template<typename T = float>
-	__global__ void _calc(T *c, float ka, T *a, float kb, T *b, Dim dim) {
+	__global__ void _init(T *data, T value, Dim dim){
 		size_t k = dim();
-		c[k] = ka * a[k] + kb * b[k];
-	}
-	template<typename T = float>
-	__global__ void _calc(T *c, T *a, T *b, Dim dim) {
-		size_t k = dim();
-		c[k] = a[k] * b[k];
-	}
-	template<typename T = float>
-	void calc(T *c, float ka, T *a, Dim dim) {
-		_calc<<<dim.dg, dim.db>>>(c, ka, a, dim);
-	}
-	template<typename T = float>
-	void calc(T *c, float ka, T *a, float kb, T *b, Dim dim) {
-		_calc<<<dim.dg, dim.db>>>(c, ka, a, kb, b, dim);
-	}
-	template<typename T = float>
-	void calc(T *c, T *a, T *b, Dim dim) {
-		_calc<<<dim.dg, dim.db>>>(c, a, b, dim);
+		data[k] = value;
 	}
 	template<typename T = float>
 	void copy(T*data, T *source, Dim dim) {
-		calc(data, 1, source, dim);
+		_copy<<<dim.dg, dim.db>>>(data, source, dim);
 	}
 	template<typename T = float>
 	T *copy(T *source, Dim dim) {
 		T *data = create<T>(dim);
-		calc(data, 1, source, dim);
+		_copy<<<dim.dg, dim.db>>>(data, source, dim);
 		return data;
 	}
 	template<typename T = float>
-	__global__ void _init(T *data, T value, Dim dim){
-		data[dim()] = value;
-	}
-	void init(float *data, float value, Dim dim){
+	void init(T *data, T value, Dim dim){
 		_init<<<dim.dg, dim.db>>>(data, value, dim);
 	}
-
 	template<typename T = float>
-	__global__ void _set(T *a, size_t ia, T *b, size_t ib){
-		a[ia] = b[ib];
+	T get(T *a, size_t ia) {
+		T b[1];
+		toHost(b, a + ia, 1);
+		return b[0];
 	}
-	template<typename T = float>
-	float get(T *a, size_t ia) {
-		T *b = create(1);
-		_set<<<1, 1>>>(b, 0, a, ia);
-		T c[1];
-		toHost(c, b, 1);
-		cudaFree(b);
-		return c[0];
+
+	__global__ void _calc(float *c, float ka, float *a, Dim dim) {
+		size_t k = dim();
+		c[k] = ka * a[k];
+	}
+	__global__ void _calc(float *c, float ka, float *a, float kb, float *b, Dim dim) {
+		size_t k = dim();
+		c[k] = ka * a[k] + kb * b[k];
+	}
+	__global__ void _calc(float *c, float *a, float *b, Dim dim) {
+		size_t k = dim();
+		c[k] = a[k] * b[k];
+	}
+	void calc(float *c, float ka, float *a, Dim dim) {
+		_calc<<<dim.dg, dim.db>>>(c, ka, a, dim);
+	}
+	void calc(float *c, float ka, float *a, float kb, float *b, Dim dim) {
+		_calc<<<dim.dg, dim.db>>>(c, ka, a, kb, b, dim);
+	}
+	void calc(float *c, float *a, float *b, Dim dim) {
+		_calc<<<dim.dg, dim.db>>>(c, a, b, dim);
 	}
 	float amax(float *a, size_t len){
 		int index = 0;

@@ -300,19 +300,19 @@ private:
 	void initWavefields() {
 		Dim dim(nx, nz);
 		if (sh) {
-			device::init(vy, 0, dim);
-			device::init(uy, 0, dim);
-			device::init(sxy, 0, dim);
-			device::init(szy, 0, dim);
+			device::init(vy, 0.0f, dim);
+			device::init(uy, 0.0f, dim);
+			device::init(sxy, 0.0f, dim);
+			device::init(szy, 0.0f, dim);
 		}
 		if (psv) {
-			device::init(vx, 0, dim);
-			device::init(vz, 0, dim);
-			device::init(ux, 0, dim);
-			device::init(uz, 0, dim);
-			device::init(sxx, 0, dim);
-			device::init(szz, 0, dim);
-			device::init(sxz, 0, dim);
+			device::init(vx, 0.0f, dim);
+			device::init(vz, 0.0f, dim);
+			device::init(ux, 0.0f, dim);
+			device::init(uz, 0.0f, dim);
+			device::init(sxx, 0.0f, dim);
+			device::init(szz, 0.0f, dim);
+			device::init(sxz, 0.0f, dim);
 		}
 	};
 	void exportSnapshot(size_t it) {
@@ -468,9 +468,9 @@ public:
 	};
 	void initKernels() {
 		Dim dim(nx, nz);
-		device::init(k_lambda, 0, dim);
-		device::init(k_mu, 0, dim);
-		device::init(k_rho, 0, dim);
+		device::init(k_lambda, 0.0f, dim);
+		device::init(k_mu, 0.0f, dim);
+		device::init(k_rho, 0.0f, dim);
 	};
 	void exportAxis() {
 		createDirectory(path_output);

@@ -6,12 +6,10 @@ protected:
     Misfit *misfit;
     Solver *solver;
 
-    bool inv_lambda;
-    bool inv_mu;
-    bool inv_rho;
+    bool inv_parameter[3];
 
-    size_t inv_maxiter;
     size_t inv_iteration;
+    size_t inv_cycle;
 
     float ls_steplenmax;
     float ls_stepleninit;
@@ -26,49 +24,60 @@ protected:
     float **p_new;
     float **p_old;
 
+    float *ls_gtg;
+    float *ls_gtp;
+
+    size_t eval_count;
+    size_t inv_count;
+    size_t ls_count;
+
 public:
-    size_t neval = 0;
     void run() {
         Dim dim(solver->nx, solver->nz);
 
         solver->exportAxis();
         solver->exportModels();
 
+        eval_count = 0;
+        inv_count = 0;
+        ls_count = 0;
+
         for(int iter = 0; iter < inv_iteration; iter++){
             std:: cout << "Starting iteration " << iter + 1 << " / " << inv_iteration << std::endl;
             float f = misfit->calc(true);
             if (iter == 0) misfit->ref = f;
-            neval += 2;
+            eval_count += 2;
 
-            std::cout << "misfit: " << f << std::endl;
-            // if (computeDirection() < 0) {
-            //     restartSearch();
-            // }
-            // lineSearch(f);
-            if (inv_lambda) {
-                device::copy(p_old[lambda], p_new[lambda], dim);
-                device::copy(g_old[lambda], g_new[lambda], dim);
+            std::cout << "  misfit = " << f / misfit->ref << std::endl;
+            if (computeDirection() < 0) {
+                restartSearch();
             }
-            if (inv_mu) {
-                device::copy(p_old[mu], p_new[mu], dim);
-                device::copy(g_old[mu], g_new[mu], dim);
-            }
-            if (inv_mu) {
-                device::copy(p_old[rho], p_new[rho], dim);
-                device::copy(g_old[rho], g_new[rho], dim);
+            lineSearch(f);
+
+            for (size_t i = 0; i < 3; i++) {
+                if (inv_parameter[i]) {
+                    device::copy(m_old[i], m_new[i], dim);
+                    device::copy(p_old[i], p_new[i], dim);
+                    device::copy(g_old[i], g_new[i], dim);
+                }
             }
 
             solver->exportKernels(iter + 1);
             solver->exportModels(iter + 1);
         }
     };
+    virtual void restartSearch() = 0;
+    virtual int lineSearch(float) = 0;
     virtual int computeDirection() = 0;
     virtual void init(Config *config, Solver *solver, Misfit *misfit) {
-        inv_lambda = solver->inv_lambda;
-        inv_mu = solver->inv_mu;
-        inv_rho = solver->inv_rho;
+        this->misfit = misfit;
+        this->solver = solver;
 
-        inv_maxiter = config->i["inv_maxiter"];
+        inv_parameter[lambda] = (bool) solver->inv_lambda;
+        inv_parameter[mu] = (bool) solver->inv_mu;
+        inv_parameter[rho] = (bool) solver->inv_rho;
+
+        inv_cycle = config->i["inv_cycle"];
         inv_iteration = config->i["inv_iteration"];
 
         ls_steplenmax = config->f["ls_steplenmax"];
@@ -77,9 +86,8 @@ public:
         ls_thresh = config->f["ls_thresh"];
         unsharp_mask = config->f["unsharp_mask"];
 
-        this->misfit = misfit;
-        this->solver = solver;
-
+        ls_gtg = host::create(inv_iteration);
+        ls_gtp = host::create(inv_iteration);
 
         size_t len = solver->nx * solver->nz;
 
