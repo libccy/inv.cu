@@ -46,7 +46,7 @@ namespace _FdmSolver {
 	    coord_n_id[i] = (int)(coord_n[i] / Ln * (n - 1) + 0.5);
 	}
 	__global__ void initAbsbound(
-		float *absbound, size_t abs_width, float abs_param,
+		float *absbound, size_t abs_width, float abs_alpha,
 		bool abs_left, bool abs_right, bool abs_bottom, bool abs_top, Dim dim) {
 	    size_t i, j, k;
 		dim(i, j, k);
@@ -54,22 +54,22 @@ namespace _FdmSolver {
 
 	    if (abs_left) {
 	        if (i + 1 < abs_width) {
-	            absbound[k] *= exp(-pow(abs_param * (abs_width - i - 1), 2));
+	            absbound[k] *= exp(-pow(abs_alpha * (abs_width - i - 1), 2));
 	        }
 	    }
 	    if (abs_right) {
 	        if (i > dim.nx - abs_width) {
-	            absbound[k] *= exp(-pow(abs_param * (abs_width + i - dim.nx), 2));
+	            absbound[k] *= exp(-pow(abs_alpha * (abs_width + i - dim.nx), 2));
 	        }
 	    }
 	    if (abs_bottom) {
 			if (j > dim.nz - abs_width) {
-	            absbound[k] *= exp(-pow(abs_param * (abs_width + j - dim.nz), 2));
+	            absbound[k] *= exp(-pow(abs_alpha * (abs_width + j - dim.nz), 2));
 	        }
 	    }
 	    if (abs_top) {
 			if (j + 1 < abs_width) {
-			   absbound[k] *= exp(-pow(abs_param * (abs_width - j - 1), 2));
+			   absbound[k] *= exp(-pow(abs_alpha * (abs_width - j - 1), 2));
 		   }
 	    }
 	}
@@ -451,7 +451,7 @@ public:
         calcIdx<<<nrec, 1>>>(rec_z_id, rec_z, zmax, nz);
 
 		initAbsbound<<<dim.dg, dim.db>>>(
-			absbound, abs_width, abs_param, abs_left, abs_right, abs_bottom, abs_top, dim
+			absbound, abs_width, abs_alpha, abs_left, abs_right, abs_bottom, abs_top, dim
         );
 	};
 	void importModel(bool model) {

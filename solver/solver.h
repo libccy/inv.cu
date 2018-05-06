@@ -15,7 +15,7 @@ protected:
 	size_t wfe;
 
 	size_t abs_width;
-	float abs_param;
+	float abs_alpha;
 	bool abs_left;
 	bool abs_top;
 	bool abs_right;
@@ -177,7 +177,7 @@ public:
 		sh = (bool) config->i["sh"];
 		psv = (bool) config->i["psv"];
 
-		abs_param = config->f["abs_param"];
+		abs_alpha = config->f["abs_alpha"];
 		abs_width = config->i["abs_width"];
 		abs_left = (bool) config->i["abs_left"];
 		abs_top = (bool) config->i["abs_top"];

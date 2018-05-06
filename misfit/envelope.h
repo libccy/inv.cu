@@ -83,6 +83,7 @@ public:
 	float calc(float *syn, float *obs, float *adstf){
 		using namespace _EnvelopeMisfit;
 		size_t &nt = solver->nt;
+		Dim dim(nt, 1);
 		hilbert(syn, csyn);
 		hilbert(obs, cobs);
 		copyC2Abs<<<nt, 1>>>(esyn, csyn, nt);
@@ -93,11 +94,11 @@ public:
 	    }
 	    envelopeTmp<<<nt, 1>>>(etmp, esyn, eobs, max);
 	    copyC2Imag<<<nt, 1>>>(ersd, csyn, nt);
-	    device::calc(ersd, ersd, etmp, Dim(nt, 1));
+	    device::calc(ersd, ersd, etmp, dim);
 	    hilbert(ersd, cobs);
 	    copyC2Imag<<<nt, 1>>>(ersd, cobs, nt);
 	    prepareEnvelopeSTF<<<nt, 1>>>(adstf, etmp, syn, ersd, nt);
-	    device::calc(ersd, 1, esyn, -1, eobs, Dim(nt, 1));
+	    device::calc(ersd, 1, esyn, -1, eobs, dim);
 		return device::norm(ersd, nt) * sqrt(solver->dt);
 	};
 	~EnvelopeMisfit() {
