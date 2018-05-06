@@ -5,13 +5,13 @@ protected:
     size_t nlcg_type;
     float nlcg_thresh;
 
-    float fletcher(Dim &dim) {
+    float pollak(Dim &dim) {
         pcalc(p_new, 1, g_new, -1, g_old, dim);
         float num = pdot(g_new, p_new, dim);
         float den = pdot(g_old, g_old, dim);
         return num / den;
     };
-    float pollak(Dim &dim) {
+    float fletcher(Dim &dim) {
         float num = pdot(g_new, g_new, dim);
         float den = pdot(g_old, g_old, dim);
         return num / den;
@@ -41,7 +41,12 @@ public:
             return -1;
         }
         else {
-            float beta = nlcg_type ? pollak(dim) : fletcher(dim);
+            float beta;
+            switch (nlcg_type) {
+                case 0: beta = fletcher(dim); break;
+                case 1: beta = pollak(dim); break;
+                default: beta = 0;
+            }
             pcalc(p_new, -1, g_new, beta, p_old, dim);
             if(conjugacy(dim) > nlcg_thresh){
                 std::cout << "  restarting NLCG... [loss of conjugacy]" << std::endl;
