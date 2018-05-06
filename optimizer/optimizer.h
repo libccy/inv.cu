@@ -31,6 +31,37 @@ protected:
     size_t inv_count;
     size_t ls_count;
 
+    float pdot(float **a, float **b, Dim &dim) {
+        float dot_ab = 0;
+        for (size_t ip = 0; ip < 3; ip++) {
+            if (inv_parameter[ip]) {
+                dot_ab += device::dot(a[ip], b[ip], dim);
+            }
+        }
+        return dot_ab;
+    };
+    void pcalc(float **c, float ka, float **a, Dim &dim) {
+        for (size_t ip = 0; ip < 3; ip++) {
+            if (inv_parameter[ip]) {
+                device::calc(c[ip], ka, a[ip], dim);
+            }
+        }
+    };
+    void pcalc(float **c, float ka, float **a, float kb, float **b, Dim &dim) {
+        for (size_t ip = 0; ip < 3; ip++) {
+            if (inv_parameter[ip]) {
+                device::calc(c[ip], ka, a[ip], kb, b[ip], dim);
+            }
+        }
+    };
+    void pcopy(float **data, float **source, Dim &dim) {
+        for (size_t ip = 0; ip < 3; ip++) {
+            if (inv_parameter[ip]) {
+                device::copy(data[ip], source[ip], dim);
+            }
+        }
+    };
+
 public:
     void run() {
         Dim dim(solver->nx, solver->nz);
@@ -54,20 +85,20 @@ public:
             }
             lineSearch(f);
 
-            for (size_t i = 0; i < 3; i++) {
-                if (inv_parameter[i]) {
-                    device::copy(m_old[i], m_new[i], dim);
-                    device::copy(p_old[i], p_new[i], dim);
-                    device::copy(g_old[i], g_new[i], dim);
-                }
-            }
+            pcopy(m_old, m_new, dim);
+            pcopy(p_old, p_new, dim);
+            pcopy(g_old, g_new, dim);
 
             solver->exportKernels(iter + 1);
             solver->exportModels(iter + 1);
         }
     };
-    virtual void restartSearch() = 0;
-    virtual int lineSearch(float) = 0;
+    void restartSearch() {
+
+    };
+    void lineSearch(float f) {
+
+    };
     virtual int computeDirection() = 0;
     virtual void init(Config *config, Solver *solver, Misfit *misfit) {
         this->misfit = misfit;
@@ -76,9 +107,8 @@ public:
         inv_parameter[lambda] = (bool) solver->inv_lambda;
         inv_parameter[mu] = (bool) solver->inv_mu;
         inv_parameter[rho] = (bool) solver->inv_rho;
-
-        inv_cycle = config->i["inv_cycle"];
         inv_iteration = config->i["inv_iteration"];
+        inv_cycle = config->i["inv_cycle"];
 
         ls_steplenmax = config->f["ls_steplenmax"];
         ls_stepleninit = config->f["ls_stepleninit"];

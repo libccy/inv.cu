@@ -167,4 +167,9 @@ namespace device {
         cublasSnrm2_v2(cublas_handle, len, a, 1, &norm_a);
         return norm_a;
     }
+    float dot(float *a, float *b, size_t len){
+        float dot_ab = 0;
+        cublasSdot_v2(cublas_handle, len, a, 1, b, 1, &dot_ab);
+        return dot_ab;
+    }
 }
