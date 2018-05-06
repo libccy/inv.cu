@@ -493,10 +493,6 @@ public:
 		using namespace _FdmSolver;
 		Dim dim(nx, nz);
 
-		if (wfe && snapshot) {
-			exportAxis();
-		}
-
 		initWavefields();
 
 		for (size_t it = 0; it < nt; it++) {

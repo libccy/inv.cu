@@ -47,6 +47,7 @@ int main(int argc, const char *argv[]){
 			Solver *solver = module::solver(config->i["solver"]);
 			solver->init(config);
 			solver->importModel(true);
+			solver->exportAxis();
 			solver->runForward(-1, false, true, true);
 			break;
 		}
