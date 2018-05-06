@@ -33,43 +33,6 @@ protected:
 	float *rec_x;
 	float *rec_z;
 
-public:
-	bool sh;
-	bool psv;
-	bool inv_lambda;
-	bool inv_mu;
-	bool inv_rho;
-
-	size_t nx;
-	size_t nz;
-	size_t nt;
-	size_t nsrc;
-	size_t nrec;
-
-	float dx;
-	float dz;
-	float dt;
-
-	float *stf_x;
-	float *stf_y;
-	float *stf_z;
-
-	float *adstf_x;
-	float *adstf_y;
-	float *adstf_z;
-
-	float *out_x;
-	float *out_y;
-	float *out_z;
-
-	float *lambda;
-	float *mu;
-	float *rho;
-
-	float *k_lambda;
-	float *k_mu;
-	float *k_rho;
-
 	void exportTraces(size_t isrc, bool adjoint) {
 		createDirectory(path_output);
 
@@ -155,6 +118,44 @@ public:
 		outfile.close();
 		free(data);
 	};
+
+public:
+	bool sh;
+	bool psv;
+	bool inv_lambda;
+	bool inv_mu;
+	bool inv_rho;
+
+	size_t nx;
+	size_t nz;
+	size_t nt;
+	size_t nsrc;
+	size_t nrec;
+
+	float dx;
+	float dz;
+	float dt;
+
+	float *stf_x;
+	float *stf_y;
+	float *stf_z;
+
+	float *adstf_x;
+	float *adstf_y;
+	float *adstf_z;
+
+	float *out_x;
+	float *out_y;
+	float *out_z;
+
+	float *lambda;
+	float *mu;
+	float *rho;
+
+	float *k_lambda;
+	float *k_mu;
+	float *k_rho;
+
 	void exportKernels(size_t n = 0) {
 		size_t len = nx * nz;
 		if(inv_lambda) exportData("k_lambda", host::create(len, k_lambda), n);
