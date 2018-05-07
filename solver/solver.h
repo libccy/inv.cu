@@ -33,6 +33,10 @@ protected:
 	float *rec_x;
 	float *rec_z;
 
+	float *stf_x;
+	float *stf_y;
+	float *stf_z;
+
 	void exportTraces(size_t isrc, bool adjoint) {
 		createDirectory(path_output);
 
@@ -135,10 +139,6 @@ public:
 	float dz;
 	float dt;
 
-	float *stf_x;
-	float *stf_y;
-	float *stf_z;
-
 	float *adstf_x;
 	float *adstf_y;
 	float *adstf_z;
@@ -188,39 +188,30 @@ public:
 		nsrc = config->src.size();
 		nrec = config->rec.size();
 
-		float *host_src_x = host::create(nsrc);
-		float *host_src_z = host::create(nsrc);
-		float *host_rec_x = host::create(nrec);
-		float *host_rec_z = host::create(nrec);
+		src_x = device::create(nsrc);
+		src_z = device::create(nsrc);
+		rec_x = device::create(nrec);
+		rec_z = device::create(nrec);
 
-		float *host_stf_x = host::create(nsrc * nt);
-		float *host_stf_y = host::create(nsrc * nt);
-		float *host_stf_z = host::create(nsrc * nt);
+		stf_x = device::create(nsrc * nt);
+		stf_y = device::create(nsrc * nt);
+		stf_z = device::create(nsrc * nt);
 
 		for (size_t is = 0; is < nsrc; is++) {
-			host_src_x[is] = config->src[is][0];
-			host_src_z[is] = config->src[is][1];
+			host::toDevice(src_x + is, config->src[is] + 0, 1);
+			host::toDevice(src_z + is, config->src[is] + 1, 1);
 			Source *src = module::source(config->src[is][2]);
 			src->init(config->src[is] + 3, nt, dt);
-			memcpy(host_stf_x + is * nt, src->stf_x, nt * sizeof(float));
-			memcpy(host_stf_y + is * nt, src->stf_y, nt * sizeof(float));
-			memcpy(host_stf_z + is * nt, src->stf_z, nt * sizeof(float));
+			host::toDevice(stf_x + is * nt, src->stf_x, nt);
+			host::toDevice(stf_y + is * nt, src->stf_y, nt);
+			host::toDevice(stf_z + is * nt, src->stf_z, nt);
 			delete src;
 		}
 
 		for (size_t ir = 0; ir < nrec; ir++) {
-			host_rec_x[ir] = config->rec[ir][0];
-			host_rec_z[ir] = config->rec[ir][1];
+			host::toDevice(rec_x + ir, config->rec[ir] + 0, 1);
+			host::toDevice(rec_z + ir, config->rec[ir] + 1, 1);
 		}
-
-		src_x = device::create(nsrc, host_src_x);
-		src_z = device::create(nsrc, host_src_z);
-		rec_x = device::create(nrec, host_rec_x);
-		rec_z = device::create(nrec, host_rec_z);
-
-		stf_x = device::create(nsrc * nt, host_stf_x);
-		stf_y = device::create(nsrc * nt, host_stf_y);
-		stf_z = device::create(nsrc * nt, host_stf_z);
 
 		if (config->i["mode"] != 1) {
 	        inv_lambda = (bool) config->i["inv_lambda"];
@@ -239,15 +230,6 @@ public:
 			out_x = device::create(nrec * nt);
 			out_z = device::create(nrec * nt);
 		}
-
-		free(host_src_x);
-		free(host_src_z);
-		free(host_rec_x);
-		free(host_rec_z);
-
-		free(host_stf_x);
-		free(host_stf_y);
-		free(host_stf_z);
 	};
 	virtual void importModel(bool model) {
 		string &path = model ? path_model_true : path_model_init;
