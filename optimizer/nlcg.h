@@ -23,19 +23,17 @@ protected:
         return fabs(pdot(g_new, g_old) / pdot(g_new, g_new));
     };
 
-public:
-    void init(Config *config, Solver *solver, Misfit *misfit) {
-        Optimizer::init(config, solver, misfit);
-        nlcg_type = config->i["nlcg_type"];
-        nlcg_thresh = config->f["nlcg_thresh"];
+    float calcStep(size_t step_count, float step_max, int &status) {
+        return bracket(step_count, step_max, status);
     };
+
     int computeDirection() {
         inv_count++;
         if (inv_count == 1) {
             pcalc(p_new, -1, g_new);
             return 0;
         }
-        else if(inv_cycle && inv_cycle < inv_count) {
+        else if(inv_iteration_cycle && inv_iteration_cycle < inv_count) {
             std::cout << "  restarting NLCG... [periodic restart]" << std::endl;
             return -1;
         }
@@ -57,5 +55,11 @@ public:
             }
             return 1;
         }
+    };
+public:
+    void init(Config *config, Solver *solver, Misfit *misfit) {
+        Optimizer::init(config, solver, misfit);
+        nlcg_type = config->i["nlcg_type"];
+        nlcg_thresh = config->f["nlcg_thresh"];
     };
 };

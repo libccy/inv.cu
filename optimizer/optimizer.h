@@ -5,11 +5,6 @@ protected:
     Misfit *misfit;
     Solver *solver;
 
-    bool param[3];
-    size_t inv_cycle;
-    size_t inv_iteration;
-    float unsharp_mask;
-
     float **m_new;
     float **m_old;
     float **g_new;
@@ -17,14 +12,19 @@ protected:
     float **p_new;
     float **p_old;
 
-    float *func_vals;
-    float *step_lens;
+    float *ls_lens;
+    float *ls_vals;
     float *ls_gtg;
     float *ls_gtp;
 
+    bool inv_parameter[3];
+    size_t inv_iteration_cycle;
+    size_t inv_iteration;
+    float inv_sharpen;
+
     size_t ls_step;
-    float ls_len_init;
-    float ls_len_max;
+    float ls_step_max;
+    float ls_step_init;
     float ls_thresh;
 
     size_t eval_count;
@@ -34,7 +34,7 @@ protected:
     float pamax(float **a) {
         float amax_a = 0;
         for (size_t ip = 0; ip < 3; ip++) {
-            if (param[ip]) {
+            if (inv_parameter[ip]) {
                 amax_a = std::max(amax_a, device::amax(a[ip], solver->dim));
             }
         }
@@ -43,7 +43,7 @@ protected:
     float pdot(float **a, float **b) {
         float dot_ab = 0;
         for (size_t ip = 0; ip < 3; ip++) {
-            if (param[ip]) {
+            if (inv_parameter[ip]) {
                 dot_ab += device::dot(a[ip], b[ip], solver->dim);
             }
         }
@@ -51,24 +51,107 @@ protected:
     };
     void pcalc(float **c, float ka, float **a) {
         for (size_t ip = 0; ip < 3; ip++) {
-            if (param[ip]) {
+            if (inv_parameter[ip]) {
                 device::calc(c[ip], ka, a[ip], solver->dim);
             }
         }
     };
     void pcalc(float **c, float ka, float **a, float kb, float **b) {
         for (size_t ip = 0; ip < 3; ip++) {
-            if (param[ip]) {
+            if (inv_parameter[ip]) {
                 device::calc(c[ip], ka, a[ip], kb, b[ip], solver->dim);
             }
         }
     };
     void pcopy(float **data, float **source) {
         for (size_t ip = 0; ip < 3; ip++) {
-            if (param[ip]) {
+            if (inv_parameter[ip]) {
                 device::copy(data[ip], source[ip], solver->dim);
             }
         }
+    };
+
+    float bracket(size_t step_count, float step_max, int &status) {
+        status = 1;
+        return step_max;
+    };
+    float backtrack(size_t step_count, float step_max, int &status) {
+        status = 1;
+        return step_max;
+    };
+    float calcAngle(float **p, float **g, float k){
+        float xx = pdot(p, p);
+        float yy = pdot(g, g);
+        float xy = k * pdot(p, g);
+        return acos(xy / sqrt(xx * yy));
+    };
+
+    virtual float calcStep(size_t, float, int &) = 0;
+    virtual int lineSearch(float f) {
+        int status = 0;
+        float alpha = 0;
+
+        float norm_m = pamax(m_new);
+        float norm_p = pamax(p_new);
+        float gtg = pdot(g_new, g_new);
+        float gtp = pdot(g_new, p_new);
+
+        float step_max = ls_step_max * norm_m / norm_p;
+        size_t step_count = 0;
+        ls_lens[ls_count] = 0;
+        ls_vals[ls_count] = f;
+        ls_gtg[inv_count - 1] = gtg;
+        ls_gtp[inv_count - 1] = gtp;
+        ls_count++;
+
+        float alpha_old = 0;
+
+        if(ls_step_init && ls_count <= 1){
+            alpha = ls_step_init * norm_m / norm_p;
+        }
+        else{
+            alpha = calcStep(step_count, step_max, status);
+        }
+
+        while(true){
+            pcalc(m_new, alpha - alpha_old, p_new);
+            alpha_old = alpha;
+            ls_lens[ls_count] = alpha;
+            ls_vals[ls_count] = misfit->calc(false);
+            ls_count++;
+            eval_count++;
+            step_count++;
+
+            alpha = calcStep(step_count, step_max, status);
+            std::cout << "  step " << (step_count < 10 ? "0" : "")
+                << step_count << "  misfit = "
+                << ls_vals[ls_count - 1] / misfit->ref
+                << std::endl;
+
+            if(status > 0){
+                std::cout << "  alpha = " << alpha << std::endl;
+                pcalc(m_new, alpha - alpha_old, p_new);
+                return status;
+            }
+            else if(status < 0){
+                pcalc(m_new, -alpha_old, p_new);
+                if(calcAngle(p_new, g_new, -1) < 1e-3){
+                    std::cout << "  line search failed" << std::endl;
+                    return status;
+                }
+                else{
+                    printf("  restarting line search...\n");
+                    restartSearch();
+                    return lineSearch(f);
+                }
+            }
+        }
+    };
+    virtual int computeDirection() = 0;
+    virtual void restartSearch() {
+        pcalc(p_new, -1, g_new);
+        ls_count = 0;
+        inv_count = 1;
     };
 
 public:
@@ -82,11 +165,13 @@ public:
             if (iter == 0) misfit->ref = f;
             eval_count += 2;
 
-            std::cout << "  misfit = " << f / misfit->ref << std::endl;
+            std::cout << "  step 00  misfit = " << f / misfit->ref << std::endl;
             if (computeDirection() < 0) {
                 restartSearch();
             }
-            lineSearch(f);
+            if (lineSearch(f) < 0) {
+                break;
+            }
 
             pcopy(m_old, m_new);
             pcopy(p_old, p_new);
@@ -96,42 +181,26 @@ public:
             solver->exportModels(iter + 1);
         }
     };
-    virtual int computeDirection() = 0;
-    virtual void restartSearch() {
-        pcalc(p_new, -1, g_new);
-        ls_count = 0;
-        inv_count = 1;
-    };
-    virtual void lineSearch(float f) {
-        std::cout << "  Performing line search" << std::endl;
-        int status = 0;
-        float alpha = 0;
-
-        float norm_m = pamax(m_new);
-        float norm_p = pamax(p_new);
-        float gtg = pdot(g_new, g_new);
-        float gtp = pdot(g_new, p_new);
-    };
     virtual void init(Config *config, Solver *solver, Misfit *misfit) {
         enum Parameter { lambda = 0, mu = 1, rho = 2 };
         this->misfit = misfit;
         this->solver = solver;
 
-        param[lambda] = solver->inv_lambda;
-        param[mu] = solver->inv_mu;
-        param[rho] = solver->inv_rho;
+        inv_parameter[lambda] = solver->inv_lambda;
+        inv_parameter[mu] = solver->inv_mu;
+        inv_parameter[rho] = solver->inv_rho;
         inv_iteration = config->i["inv_iteration"];
-        inv_cycle = config->i["inv_cycle"];
-        unsharp_mask = config->f["unsharp_mask"];
+        inv_iteration_cycle = config->i["inv_iteration_cycle"];
+        inv_sharpen = config->f["inv_sharpen"];
 
         ls_step = config->i["ls_step"];
-        ls_len_max = config->f["ls_len_max"];
-        ls_len_init = config->f["ls_len_init"];
+        ls_step_max = config->f["ls_step_max"];
+        ls_step_init = config->f["ls_step_init"];
         ls_thresh = config->f["ls_thresh"];
 
         int nstep = inv_iteration * ls_step;
-        func_vals = host::create(nstep);
-        step_lens = host::create(nstep);
+        ls_vals = host::create(nstep);
+        ls_lens = host::create(nstep);
         ls_gtg = host::create(inv_iteration);
         ls_gtp = host::create(inv_iteration);
 
