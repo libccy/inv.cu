@@ -6,14 +6,9 @@ protected:
     Solver *solver;
 
     bool param[3];
-    size_t iter_total;
-    size_t iter_cycle;
+    size_t inv_cycle;
+    size_t inv_iteration;
     float unsharp_mask;
-
-    // float ls_steplenmax;
-    // float ls_stepleninit;
-    // float ls_stepcountma;
-    // float ls_thresh;
 
     float **m_new;
     float **m_old;
@@ -25,9 +20,14 @@ protected:
     float *ls_gtg;
     float *ls_gtp;
 
-    size_t iter_count;
+    size_t ls_count_max;
+    float ls_len_init;
+    float ls_len_max;
+    float ls_thresh;
+
     size_t eval_count;
-    // size_t ls_count;
+    size_t inv_count;
+    size_t ls_count;
 
     float pdot(float **a, float **b, Dim &dim) {
         float dot_ab = 0;
@@ -67,12 +67,12 @@ public:
         solver->exportAxis();
         solver->exportModels();
 
-        iter_count = 0;
         eval_count = 0;
-        // ls_count = 0;
+        inv_count = 0;
+        ls_count = 0;
 
-        for(int iter = 0; iter < iter_total; iter++){
-            std:: cout << "Starting iteration " << iter + 1 << " / " << iter_total << std::endl;
+        for(int iter = 0; iter < inv_iteration; iter++){
+            std:: cout << "Starting iteration " << iter + 1 << " / " << inv_iteration << std::endl;
             float f = misfit->calc(true);
             if (iter == 0) misfit->ref = f;
             eval_count += 2;
@@ -95,7 +95,7 @@ public:
 
     };
     void lineSearch(float f) {
-        // from here
+        // from here: class lineSearch
     };
     virtual int computeDirection() = 0;
     virtual void init(Config *config, Solver *solver, Misfit *misfit) {
@@ -106,20 +106,19 @@ public:
         param[lambda] = solver->inv_lambda;
         param[mu] = solver->inv_mu;
         param[rho] = solver->inv_rho;
-        iter_total = config->i["iter_total"];
-        iter_cycle = config->i["iter_cycle"];
+        inv_iteration = config->i["inv_iteration"];
+        inv_cycle = config->i["inv_cycle"];
         unsharp_mask = config->f["unsharp_mask"];
 
-        // ls_steplenmax = config->f["ls_steplenmax"];
-        // ls_stepleninit = config->f["ls_stepleninit"];
-        // ls_stepcountma = config->f["ls_stepcountma"];
-        // ls_thresh = config->f["ls_thresh"];
+        ls_count_max = config->i["ls_count_max"];
+        ls_len_max = config->f["ls_len_max"];
+        ls_len_init = config->f["ls_len_init"];
+        ls_thresh = config->f["ls_thresh"];
 
-        ls_gtg = host::create(iter_total);
-        ls_gtp = host::create(iter_total);
+        ls_gtg = host::create(inv_iteration);
+        ls_gtp = host::create(inv_iteration);
 
         size_t len = solver->nx * solver->nz;
-
         m_new = host::create<float *>(3);
         g_new = host::create<float *>(3);
         m_old = device::create2D(3, len);

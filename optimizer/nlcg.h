@@ -31,12 +31,12 @@ public:
     };
     int computeDirection() {
         Dim dim(solver->nx, solver->nz);
-        iter_count++;
-        if (iter_count == 1) {
+        inv_count++;
+        if (inv_count == 1) {
             pcalc(p_new, -1, g_new, dim);
             return 0;
         }
-        else if(iter_cycle && iter_cycle < iter_count) {
+        else if(inv_cycle && inv_cycle < inv_count) {
             std::cout << "  restarting NLCG... [periodic restart]" << std::endl;
             return -1;
         }

@@ -11,7 +11,7 @@ public:
         lbfgs_mem = config->i["lbfgs_mem"];
         lbfgs_thresh = config->f["lbfgs_thresh"];
     };
-    int computeDirection(){
+    int computeDirection() {
         return 0;
     };
 };
