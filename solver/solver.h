@@ -111,7 +111,7 @@ protected:
 		for (size_t i = istr.size(); i < 6; i++) {
 			istr = "0" + istr;
 		}
-		int npt = nx * nz;
+		int npt = (int) dim;
 		std::ofstream outfile(path_output + "/proc" + istr + "_" + comp + ".bin", std::ofstream::binary);
 		outfile.write(reinterpret_cast<char*>(&npt), sizeof(int));
 		outfile.write(reinterpret_cast<char*>(data), npt * sizeof(float));
@@ -126,8 +126,7 @@ public:
 	bool inv_mu;
 	bool inv_rho;
 
-	size_t nx;
-	size_t nz;
+	Dim dim;
 	size_t nt;
 	size_t nsrc;
 	size_t nrec;
@@ -157,16 +156,14 @@ public:
 	float *k_rho;
 
 	void exportKernels(size_t n = 0) {
-		size_t len = nx * nz;
-		if(inv_lambda) exportData("k_lambda", host::create(len, k_lambda), n);
-		if(inv_mu) exportData("k_mu", host::create(len, k_mu), n);
-		if(inv_rho) exportData("k_rho", host::create(len, k_rho), n);
+		if(inv_lambda) exportData("k_lambda", host::create(dim, k_lambda), n);
+		if(inv_mu) exportData("k_mu", host::create(dim, k_mu), n);
+		if(inv_rho) exportData("k_rho", host::create(dim, k_rho), n);
 	};
 	void exportModels(size_t n = 0) {
-		size_t len = nx * nz;
-		if(inv_lambda) exportData("lambda", host::create(len, lambda), n);
-		if(inv_mu) exportData("mu", host::create(len, mu), n);
-		if(inv_rho) exportData("rho", host::create(len, rho), n);
+		if(inv_lambda) exportData("lambda", host::create(dim, lambda), n);
+		if(inv_mu) exportData("mu", host::create(dim, mu), n);
+		if(inv_rho) exportData("rho", host::create(dim, rho), n);
 	};
 	virtual void init(Config *config) {
 		dt = config->f["dt"];

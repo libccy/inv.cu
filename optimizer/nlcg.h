@@ -5,22 +5,22 @@ protected:
     size_t nlcg_type;
     float nlcg_thresh;
 
-    float pollak(Dim &dim) {
-        pcalc(p_new, 1, g_new, -1, g_old, dim);
-        float num = pdot(g_new, p_new, dim);
-        float den = pdot(g_old, g_old, dim);
+    float pollak() {
+        pcalc(p_new, 1, g_new, -1, g_old);
+        float num = pdot(g_new, p_new);
+        float den = pdot(g_old, g_old);
         return num / den;
     };
-    float fletcher(Dim &dim) {
-        float num = pdot(g_new, g_new, dim);
-        float den = pdot(g_old, g_old, dim);
+    float fletcher() {
+        float num = pdot(g_new, g_new);
+        float den = pdot(g_old, g_old);
         return num / den;
     };
-    float descent(Dim &dim) {
-        return pdot(p_new, g_new, dim);
+    float descent() {
+        return pdot(p_new, g_new);
     };
-    float conjugacy(Dim &dim) {
-        return fabs(pdot(g_new, g_old, dim) / pdot(g_new, g_new, dim));
+    float conjugacy() {
+        return fabs(pdot(g_new, g_old) / pdot(g_new, g_new));
     };
 
 public:
@@ -30,10 +30,9 @@ public:
         nlcg_thresh = config->f["nlcg_thresh"];
     };
     int computeDirection() {
-        Dim dim(solver->nx, solver->nz);
         inv_count++;
         if (inv_count == 1) {
-            pcalc(p_new, -1, g_new, dim);
+            pcalc(p_new, -1, g_new);
             return 0;
         }
         else if(inv_cycle && inv_cycle < inv_count) {
@@ -43,16 +42,16 @@ public:
         else {
             float beta;
             switch (nlcg_type) {
-                case 0: beta = fletcher(dim); break;
-                case 1: beta = pollak(dim); break;
+                case 0: beta = fletcher(); break;
+                case 1: beta = pollak(); break;
                 default: beta = 0;
             }
-            pcalc(p_new, -1, g_new, beta, p_old, dim);
-            if(conjugacy(dim) > nlcg_thresh){
+            pcalc(p_new, -1, g_new, beta, p_old);
+            if(conjugacy() > nlcg_thresh){
                 std::cout << "  restarting NLCG... [loss of conjugacy]" << std::endl;
                 return -1;
             }
-            if(descent(dim) > 0){
+            if(descent() > 0){
                 std::cout << "  restarting NLCG... [not a descent direction]" << std::endl;
                 return -1;
             }

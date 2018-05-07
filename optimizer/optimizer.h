@@ -29,41 +29,39 @@ protected:
     size_t inv_count;
     size_t ls_count;
 
-    float pdot(float **a, float **b, Dim &dim) {
+    float pdot(float **a, float **b) {
         float dot_ab = 0;
         for (size_t ip = 0; ip < 3; ip++) {
             if (param[ip]) {
-                dot_ab += device::dot(a[ip], b[ip], dim);
+                dot_ab += device::dot(a[ip], b[ip], solver->dim);
             }
         }
         return dot_ab;
     };
-    void pcalc(float **c, float ka, float **a, Dim &dim) {
+    void pcalc(float **c, float ka, float **a) {
         for (size_t ip = 0; ip < 3; ip++) {
             if (param[ip]) {
-                device::calc(c[ip], ka, a[ip], dim);
+                device::calc(c[ip], ka, a[ip], solver->dim);
             }
         }
     };
-    void pcalc(float **c, float ka, float **a, float kb, float **b, Dim &dim) {
+    void pcalc(float **c, float ka, float **a, float kb, float **b) {
         for (size_t ip = 0; ip < 3; ip++) {
             if (param[ip]) {
-                device::calc(c[ip], ka, a[ip], kb, b[ip], dim);
+                device::calc(c[ip], ka, a[ip], kb, b[ip], solver->dim);
             }
         }
     };
-    void pcopy(float **data, float **source, Dim &dim) {
+    void pcopy(float **data, float **source) {
         for (size_t ip = 0; ip < 3; ip++) {
             if (param[ip]) {
-                device::copy(data[ip], source[ip], dim);
+                device::copy(data[ip], source[ip], solver->dim);
             }
         }
     };
 
 public:
     void run() {
-        Dim dim(solver->nx, solver->nz);
-
         solver->exportAxis();
         solver->exportModels();
 
@@ -75,20 +73,20 @@ public:
 
             std::cout << "  misfit = " << f / misfit->ref << std::endl;
             if (computeDirection() < 0) {
-                restartSearch(dim);
+                restartSearch();
             }
             lineSearch(f);
 
-            pcopy(m_old, m_new, dim);
-            pcopy(p_old, p_new, dim);
-            pcopy(g_old, g_new, dim);
+            pcopy(m_old, m_new);
+            pcopy(p_old, p_new);
+            pcopy(g_old, g_new);
 
             solver->exportKernels(iter + 1);
             solver->exportModels(iter + 1);
         }
     };
-    virtual void restartSearch(Dim &dim) {
-        pcalc(p_new, -1, g_new, dim);
+    virtual void restartSearch() {
+        pcalc(p_new, -1, g_new);
         ls_count = 0;
         inv_count = 1;
     };
@@ -116,7 +114,7 @@ public:
         ls_gtg = host::create(inv_iteration);
         ls_gtp = host::create(inv_iteration);
 
-        size_t len = solver->nx * solver->nz;
+        size_t len = solver->dim;
         m_new = host::create<float *>(3);
         g_new = host::create<float *>(3);
         m_old = device::create2D(3, len);

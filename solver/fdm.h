@@ -298,7 +298,6 @@ private:
 		}
 	};
 	void initWavefields() {
-		Dim dim(nx, nz);
 		if (sh) {
 			device::init(vy, 0.0f, dim);
 			device::init(uy, 0.0f, dim);
@@ -316,7 +315,6 @@ private:
 		}
 	};
 	void exportSnapshot(size_t it) {
-		Dim dim(nx, nz);
 		if (wfe && (it + 1) % wfe == 0) {
 			switch (obs) {
 				case 0: {
@@ -376,12 +374,12 @@ public:
 		read("x", xmax);
 		read("z", zmax);
 
-		nx = std::round(sqrt(model_npt * xmax / zmax));
-		nz = std::round(model_npt / nx);
+		size_t nx = std::round(sqrt(model_npt * xmax / zmax));
+		size_t nz = std::round(model_npt / nx);
+		dim.init(nx, nz);
 		dx = xmax / (nx - 1);
 		dz = zmax / (nz - 1);
 
-		Dim dim(nx, nz);
 		nsfe = nt / sfe;
 
 		lambda = device::create(dim);
@@ -458,7 +456,6 @@ public:
 		Solver::importModel(model);
 		using namespace _FdmSolver;
 
-		Dim dim(nx, nz);
 		mesh2grid<<<dim.dg, dim.db>>>(
 			lambda, mu, rho,
 			model_x, model_z, model_vp, model_vs, model_rho, model_npt,
@@ -467,19 +464,17 @@ public:
 		vps2lm<<<dim.dg, dim.db>>>(lambda, mu, rho, dim);
 	};
 	void initKernels() {
-		Dim dim(nx, nz);
 		device::init(k_lambda, 0.0f, dim);
 		device::init(k_mu, 0.0f, dim);
 		device::init(k_rho, 0.0f, dim);
 	};
 	void exportAxis() {
 		createDirectory(path_output);
-		Dim dim(nx, nz);
 		float *x = host::create(dim);
 		float *z = host::create(dim);
 
-		for (size_t i = 0; i < nx; i++) {
-			for (size_t j = 0; j < nz; j++) {
+		for (size_t i = 0; i < dim.nx; i++) {
+			for (size_t j = 0; j < dim.nz; j++) {
 				size_t k = dim.hk(i, j);
 				x[k] = i * dx;
 				z[k] = j * dz;
@@ -491,7 +486,6 @@ public:
 	};
 	void runForward(int isrc, bool adjoint = false, bool trace = false, bool snapshot = false) {
 		using namespace _FdmSolver;
-		Dim dim(nx, nz);
 
 		initWavefields();
 
@@ -548,7 +542,6 @@ public:
 	};
 	void runAdjoint(int isrc, bool snapshot = false) {
 		using namespace _FdmSolver;
-		Dim dim(nx, nz);
 
 		initWavefields();
 

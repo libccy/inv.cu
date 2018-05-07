@@ -91,7 +91,7 @@ public:
 		this->filter = filter;
 
 		solver->init(config);
-		filter->init(solver->nx, solver->nz, config->i["filter_sigma"]);
+		filter->init(solver->dim.nx, solver->dim.nz, config->i["filter_sigma"]);
 
 		ref = 1;
 

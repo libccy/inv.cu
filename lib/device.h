@@ -7,8 +7,14 @@ public:
 	size_t dg;
 	size_t db;
 	bool row_major;
-	Dim(size_t nx, size_t nz, bool row_major=true):
-		nx(nx), nz(nz), row_major(row_major) {
+	Dim() {};
+	Dim(size_t nx, size_t nz, bool row_major = true) {
+		this->init(nx, nz, row_major);
+	};
+	void init(size_t nx, size_t nz, bool row_major = true) {
+		this->nx = nx;
+		this->nz = nz;
+		this->row_major = row_major;
 		dg = nx;
 		db = nz;
 	};

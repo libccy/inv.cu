@@ -7,8 +7,8 @@ protected:
     float lbfgs_thresh;
 
 public:
-    void restartSearch(Dim &dim) {
-        Optimizer::restartSearch(dim);
+    void restartSearch() {
+        Optimizer::restartSearch();
         lbfgs_used = 0;
     };
     void init(Config *config, Solver *solver, Misfit *misfit) {
