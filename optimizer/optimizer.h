@@ -67,10 +67,6 @@ public:
         solver->exportAxis();
         solver->exportModels();
 
-        eval_count = 0;
-        inv_count = 0;
-        ls_count = 0;
-
         for(int iter = 0; iter < inv_iteration; iter++){
             std:: cout << "Starting iteration " << iter + 1 << " / " << inv_iteration << std::endl;
             float f = misfit->calc(true);
@@ -79,7 +75,7 @@ public:
 
             std::cout << "  misfit = " << f / misfit->ref << std::endl;
             if (computeDirection() < 0) {
-                restartSearch();
+                restartSearch(dim);
             }
             lineSearch(f);
 
@@ -91,10 +87,12 @@ public:
             solver->exportModels(iter + 1);
         }
     };
-    void restartSearch() {
-
+    virtual void restartSearch(Dim &dim) {
+        pcalc(p_new, -1, g_new, dim);
+        ls_count = 0;
+        inv_count = 1;
     };
-    void lineSearch(float f) {
+    virtual void lineSearch(float f) {
         // from here: class lineSearch
     };
     virtual int computeDirection() = 0;
@@ -132,5 +130,9 @@ public:
         g_new[lambda] = solver->k_lambda;
         g_new[mu] = solver->k_mu;
         g_new[rho] = solver->k_rho;
+
+        eval_count = 0;
+        inv_count = 0;
+        ls_count = 0;
     };
 };
