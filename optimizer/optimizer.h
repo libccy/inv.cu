@@ -17,10 +17,12 @@ protected:
     float **p_new;
     float **p_old;
 
+    float *func_vals;
+    float *step_lens;
     float *ls_gtg;
     float *ls_gtp;
 
-    size_t ls_count_max;
+    size_t ls_step;
     float ls_len_init;
     float ls_len_max;
     float ls_thresh;
@@ -29,6 +31,15 @@ protected:
     size_t inv_count;
     size_t ls_count;
 
+    float pamax(float **a) {
+        float amax_a = 0;
+        for (size_t ip = 0; ip < 3; ip++) {
+            if (param[ip]) {
+                amax_a = std::max(amax_a, device::amax(a[ip], solver->dim));
+            }
+        }
+        return amax_a;
+    };
     float pdot(float **a, float **b) {
         float dot_ab = 0;
         for (size_t ip = 0; ip < 3; ip++) {
@@ -92,7 +103,14 @@ public:
         inv_count = 1;
     };
     virtual void lineSearch(float f) {
-        // from here: class lineSearch
+        std::cout << "  Performing line search" << std::endl;
+        int status = 0;
+        float alpha = 0;
+
+        float norm_m = pamax(m_new);
+        float norm_p = pamax(p_new);
+        float gtg = pdot(g_new, g_new);
+        float gtp = pdot(g_new, p_new);
     };
     virtual void init(Config *config, Solver *solver, Misfit *misfit) {
         enum Parameter { lambda = 0, mu = 1, rho = 2 };
@@ -106,11 +124,14 @@ public:
         inv_cycle = config->i["inv_cycle"];
         unsharp_mask = config->f["unsharp_mask"];
 
-        ls_count_max = config->i["ls_count_max"];
+        ls_step = config->i["ls_step"];
         ls_len_max = config->f["ls_len_max"];
         ls_len_init = config->f["ls_len_init"];
         ls_thresh = config->f["ls_thresh"];
 
+        int nstep = inv_iteration * ls_step;
+        func_vals = host::create(nstep);
+        step_lens = host::create(nstep);
         ls_gtg = host::create(inv_iteration);
         ls_gtp = host::create(inv_iteration);
 
