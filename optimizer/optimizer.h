@@ -85,6 +85,7 @@ public:
             solver->exportModels(iter + 1);
         }
     };
+    virtual int computeDirection() = 0;
     virtual void restartSearch() {
         pcalc(p_new, -1, g_new);
         ls_count = 0;
@@ -93,7 +94,6 @@ public:
     virtual void lineSearch(float f) {
         // from here: class lineSearch
     };
-    virtual int computeDirection() = 0;
     virtual void init(Config *config, Solver *solver, Misfit *misfit) {
         enum Parameter { lambda = 0, mu = 1, rho = 2 };
         this->misfit = misfit;

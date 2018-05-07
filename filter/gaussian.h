@@ -48,14 +48,12 @@ public:
 	void init(size_t nx, size_t nz, size_t sigma) {
 		using namespace _GaussianFilter;
 		Filter::init(nx, nz, sigma);
-		Dim dim(nx, nz);
 		gsum = device::create(dim);
 		gtmp = device::create(dim);
 		initialiseGaussian<<<dim.dg, dim.db>>>(gsum, sigma, dim);
 	};
 	void apply(float *data) {
 		using namespace _GaussianFilter;
-		Dim dim(nx, nz);
 		filterKernelX<<<dim.dg, dim.db>>>(data, gtmp, sigma, dim);
 		filterKernelZ<<<dim.dg, dim.db>>>(data, gtmp, gsum, sigma, dim);
 	};
