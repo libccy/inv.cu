@@ -349,7 +349,7 @@ public:
 		model_npt = 0;
 		int npt = 0;
 		auto read = [&](string comp, float &max) {
-			std::ifstream infile(path_model_true + "/proc000000_" + comp + ".bin", std::ifstream::binary);
+			std::ifstream infile(path + "/model_true/proc000000_" + comp + ".bin", std::ifstream::binary);
 			infile.read(reinterpret_cast<char*>(&npt), sizeof(int));
 			if (model_npt) {
 				if (model_npt != npt) {
@@ -469,7 +469,6 @@ public:
 		device::init(k_rho, 0.0f, dim);
 	};
 	void exportAxis() {
-		createDirectory(path_output);
 		float *x = host::create(dim);
 		float *z = host::create(dim);
 

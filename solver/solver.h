@@ -6,9 +6,7 @@ namespace module {
 
 class Solver {
 protected:
-	string path_output;
-	string path_model_init;
-	string path_model_true;
+	string path;
 
 	size_t obs;
 	size_t sfe;
@@ -38,8 +36,6 @@ protected:
 	float *stf_z;
 
 	void exportTraces(size_t isrc, bool adjoint) {
-		createDirectory(path_output);
-
 		int header1[28];
 		short int header2[2];
 		short int header3[2];
@@ -78,7 +74,7 @@ protected:
 			for (size_t i = istr.size(); i < 6; i++) {
 				istr = "0" + istr;
 			}
-			return path_output + ((!adjoint&&obs==0)?"/v":"/u") + comp + "_" + istr + ".su";
+			return path + "/output/" + ((!adjoint&&obs==0)?"v":"u") + comp + "_" + istr + ".su";
 		};
 		auto write = [&](string comp, float *data) {
 			std::ofstream outfile(filename(comp), std::ofstream::binary);
@@ -116,7 +112,7 @@ protected:
 			istr = "0" + istr;
 		}
 		int npt = (int) dim;
-		std::ofstream outfile(path_output + "/proc" + istr + "_" + comp + ".bin", std::ofstream::binary);
+		std::ofstream outfile(path + "/output/proc" + istr + "_" + comp + ".bin", std::ofstream::binary);
 		outfile.write(reinterpret_cast<char*>(&npt), sizeof(int));
 		outfile.write(reinterpret_cast<char*>(data), npt * sizeof(float));
 		outfile.close();
@@ -181,10 +177,7 @@ public:
 		abs_right = (bool) config->i["abs_right"];
 		abs_bottom = (bool) config->i["abs_bottom"];
 
-		path_output = config->s["output"];
-		path_model_init = config->s["model_init"];
-		path_model_true = config->s["model_true"];
-
+		path = config->path;
 		nsrc = config->src.size();
 		nrec = config->rec.size();
 
@@ -232,10 +225,10 @@ public:
 		}
 	};
 	virtual void importModel(bool model) {
-		string &path = model ? path_model_true : path_model_init;
+		string model_path = model ? "model_true" : "model_init";
 		int npt = 0;
 		auto read = [&](string comp, float* &data) {
-			std::ifstream infile(path + "/proc000000_" + comp + ".bin", std::ifstream::binary);
+			std::ifstream infile(path + "/" + model_path + "/proc000000_" + comp + ".bin", std::ifstream::binary);
 			infile.read(reinterpret_cast<char*>(&npt), sizeof(int));
 			if (model_npt != npt) {
 				std::cout << "error: invalid model" << std::endl;

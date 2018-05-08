@@ -129,6 +129,7 @@ int main(int argc, const char *argv[]){
 		}
 	}
 
+	createDirectory("output");
 	generateChecker(
 		dict["cx"], dict["cz"], dict["nx"], dict["nz"],
 		dict["dx"], dict["dz"], dict["vp0"], dict["vs0"], dict["rho0"],

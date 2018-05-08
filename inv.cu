@@ -8,7 +8,7 @@ int main(int argc, const char *argv[]){
 
 	map<string, string> cfg;
 
-	for (size_t i = 0; i < argc; i++) {
+	for (size_t i = 1; i < argc; i++) {
 		string arg = argv[i];
 		size_t pos = arg.find("=");
 		if (pos != string::npos && arg[0] == '-') {
@@ -17,16 +17,13 @@ int main(int argc, const char *argv[]){
 			cfg[key] = value;
 		}
 		else {
-			pos = arg.find(".cfg");
-			if (pos != string::npos) {
-				cfg["config"] = arg;
-			}
+			cfg["config"] = arg;
 		}
 	}
 
 	if (!cfg["config"].size()) {
-		std::cout << "Using example/checker.cfg" << std::endl;
-		cfg["config"] = "example/checker.cfg";
+		std::cout << "Using example/checker" << std::endl;
+		cfg["config"] = "example/checker";
 	}
 
 	Config *config = new Config(cfg);

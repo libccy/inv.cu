@@ -1,19 +1,30 @@
 #!/usr/bin/env python
 
 import sys
-import obspy
 from os.path import exists
 
 import numpy as np
 import pylab
 
 
-def read_fortran(filename):
+def read_su(filename):
+	data = []
 	with open(filename, 'rb') as f:
-		f.seek(0)
-		v = np.fromfile(f, dtype='float32')
+		f.seek(114)
+		nt = np.fromfile(f, dtype='int16', count=1)[0]
 
-	return v[:-1]
+		nb = nt * 4 + 240
+		i = 0
+		while True:
+			f.seek(i * nb + 240)
+			trace = np.fromfile(f, dtype='float32', count=nt)
+			if len(trace):
+				i = i + 1
+				data.append(trace)
+			else:
+				break
+
+	return data
 
 if __name__ == '__main__':
 	""" Plots su(Seismic Unix) data
@@ -40,20 +51,14 @@ if __name__ == '__main__':
 
 	assert exists(path)
 
-	data = obspy.read(path, format='SU', byteorder='<')
-	stats = data[0].stats
-	t = np.arange(stats.npts)*stats.delta
+	data = read_su(path)
 	am = 0
-
-	print('dt    = ', stats.delta)
-	print('npts  = ', stats.npts)
-	print('nsrc  = ', len(data))
+	t = np.arange(len(data[0]))
+	for i in range(len(data)):
+		am = max(am, np.amax(data[i]))
 
 	for i in range(len(data)):
-		am = max(am, np.amax(data[i].data))
+		pylab.plot(t, data[i] + i * am, 'b')
 
-	for i in range(len(data)):
-		pylab.plot(t, data[i].data + i * am, 'b')
-
-	print('amax  = ', am)
+	pylab.gca().yaxis.set_visible(False)
 	pylab.show()
