@@ -114,7 +114,7 @@ protected:
         }
 
         while(true){
-            pcalc(m_new, alpha - alpha_old, p_new);
+            pcalc(m_new, 1, m_new, alpha - alpha_old, p_new);
             alpha_old = alpha;
             ls_lens[ls_count] = alpha;
             ls_vals[ls_count] = misfit->calc(false);
@@ -130,11 +130,11 @@ protected:
 
             if(status > 0){
                 std::cout << "  alpha = " << alpha << std::endl;
-                pcalc(m_new, alpha - alpha_old, p_new);
+                pcalc(m_new, 1, m_new, alpha - alpha_old, p_new);
                 return status;
             }
             else if(status < 0){
-                pcalc(m_new, -alpha_old, p_new);
+                pcalc(m_new, 1, m_new, -alpha_old, p_new);
                 if(calcAngle(p_new, g_new, -1) < 1e-3){
                     std::cout << "  line search failed" << std::endl;
                     return status;
