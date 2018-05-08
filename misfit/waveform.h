@@ -41,7 +41,7 @@ public:
 		tw = device::create(nt);
 		taper<<<nt, 1>>>(tw, solver->dt, nt);
 	};
-	float calc(float *syn, float *obs, float *adstf){
+	float run(float *syn, float *obs, float *adstf){
 		using namespace _WaveformMisfit;
 		size_t &nt = solver->nt;
 		diff<<<nt, 1>>>(syn, obs, adstf, misfit, tw, nt);

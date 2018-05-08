@@ -117,7 +117,7 @@ protected:
             pcalc(m_new, 1, m_new, alpha - alpha_old, p_new);
             alpha_old = alpha;
             ls_lens[ls_count] = alpha;
-            ls_vals[ls_count] = misfit->calc(false);
+            ls_vals[ls_count] = misfit->run(false);
             ls_count++;
             eval_count++;
             step_count++;
@@ -161,7 +161,7 @@ public:
 
         for(int iter = 0; iter < inv_iteration; iter++){
             std:: cout << "Starting iteration " << iter + 1 << " / " << inv_iteration << std::endl;
-            float f = misfit->calc(true);
+            float f = misfit->run(true);
             if (iter == 0) misfit->ref = f;
             eval_count += 2;
 

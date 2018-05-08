@@ -80,7 +80,7 @@ public:
         etmp = device::create(nt);
 		cufftPlan1d(&cufft_handle, nt, CUFFT_C2C, 1);
 	};
-	float calc(float *syn, float *obs, float *adstf){
+	float run(float *syn, float *obs, float *adstf){
 		using namespace _EnvelopeMisfit;
 		size_t &nt = solver->nt;
 		Dim dim(nt, 1);

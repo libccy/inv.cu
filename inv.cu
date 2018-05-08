@@ -57,7 +57,7 @@ int main(int argc, const char *argv[]){
 			Misfit *misfit = module::misfit(config->i["misfit"]);
 
 			misfit->init(config, solver, filter);
-			misfit->calc(true);
+			misfit->run(true);
 			solver->exportAxis();
 			solver->exportKernels();
 			break;
