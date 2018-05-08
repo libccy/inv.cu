@@ -2,7 +2,6 @@
 
 class Source {
 protected:
-	const float pi = 3.1415927;
 	float f0;
 	float t0;
 	float angle;
