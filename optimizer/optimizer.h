@@ -15,6 +15,7 @@ namespace _Optimizer {
 class Optimizer {
 protected:
 	cusolverDnHandle_t solver_handle;
+    clock_t time_start;
 
     Misfit *misfit;
     Solver *solver;
@@ -310,6 +311,7 @@ protected:
         return alpha;
     };
     float backtrack(size_t step_count, float step_max, int &status) {
+        // from here: lbfgs tic/toc
         status = 1;
         return step_max;
     };
@@ -387,8 +389,9 @@ public:
         solver->exportAxis();
         solver->exportModels();
 
+        time_start = clock();
         for(int iter = 0; iter < inv_iteration; iter++){
-            std:: cout << "Starting iteration " << iter + 1 << " / " << inv_iteration << std::endl;
+            std:: cout << "\nStarting iteration " << iter + 1 << " / " << inv_iteration << std::endl;
             float f = misfit->run(true);
             if (iter == 0) misfit->ref = f;
             eval_count += 2;
@@ -407,6 +410,16 @@ public:
 
             solver->exportKernels(iter + 1);
             solver->exportModels(iter + 1);
+        }
+
+        float time_elapsed = (float)(clock() - time_start) / CLOCKS_PER_SEC;
+        if(time_elapsed > 60){
+            size_t t_min = time_elapsed / 60;
+            size_t t_sec = std::round(time_elapsed - t_min * 60);
+            std::cout << "\nElapsed time: " << t_min << "min " << t_sec << "s" << std::endl;
+        }
+        else{
+            std::cout << "\nElapsed time: " << std::round(time_elapsed) << std::endl;
         }
     };
     virtual void init(Config *config, Solver *solver, Misfit *misfit) {

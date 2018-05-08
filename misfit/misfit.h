@@ -63,7 +63,7 @@ public:
 			for (size_t i = istr.size(); i < 6; i++) {
 				istr = "0" + istr;
 			}
-			return path + "/trace/u" + comp + "_" + istr + ".su";
+			return path + "/traces/u" + comp + "_" + istr + ".su";
 		};
 		auto read = [&](string comp, float *data) {
 			std::ifstream infile(filename(comp), std::ifstream::binary);
@@ -104,7 +104,6 @@ public:
 		obs_z = device::create2D(nsrc, dim);
 
 		if (config->i["trace_file"]) {
-			std::cout << "Using " << config->path << std::endl;
 			for (size_t isrc = 0; isrc < nsrc; isrc++) {
 				this->importTraces(isrc, config->path);
 			}

@@ -22,7 +22,7 @@ int main(int argc, const char *argv[]){
 	}
 
 	if (!cfg["config"].size()) {
-		std::cout << "Using example/checker" << std::endl;
+		std::cout << "Using default directory example/checker" << std::endl;
 		cfg["config"] = "example/checker";
 	}
 
@@ -60,13 +60,6 @@ int main(int argc, const char *argv[]){
 		}
 	}
 
-
-	/* clock_t start = clock();
-	solver->run(true);
-	double duration = (clock() - start) / (double) CLOCKS_PER_SEC;
-	cout << "Elapsed time: " << duration << endl; */
-
 	cublasDestroy(device::cublas_handle);
-
 	return 0;
 }

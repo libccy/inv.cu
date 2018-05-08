@@ -42,7 +42,7 @@ private:
 	void loadSource() {
 		size_t pos;
 		string data;
-		std::ifstream infile(path + "/source");
+		std::ifstream infile(path + "/sources");
 		while (getline(infile, data)) {
 			pos = data.find_first_not_of(" \t");
 			if (pos != string::npos) {
@@ -62,7 +62,7 @@ private:
 	void loadStation() {
 		size_t pos;
 		string data;
-		std::ifstream infile(path + "/station");
+		std::ifstream infile(path + "/stations");
 		while (getline(infile, data)) {
 			pos = data.find_first_not_of(" \t");
 			if (pos != string::npos) {
