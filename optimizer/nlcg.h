@@ -33,7 +33,7 @@ protected:
             p_calc(p_new, -1, g_new);
             return 0;
         }
-        else if(inv_iteration_cycle && inv_iteration_cycle < inv_count) {
+        else if(inv_cycle && inv_cycle < inv_count) {
             std::cout << "  restarting NLCG... [periodic restart]" << std::endl;
             return -1;
         }

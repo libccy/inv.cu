@@ -5,7 +5,6 @@ using std::map;
 
 int main(int argc, const char *argv[]){
 	cublasCreate(&device::cublas_handle);
-	cusolverDnCreate(&device::solver_handle);
 
 	map<string, string> cfg;
 
@@ -71,7 +70,6 @@ int main(int argc, const char *argv[]){
 	cout << "Elapsed time: " << duration << endl; */
 
 	cublasDestroy(device::cublas_handle);
-	cusolverDnDestroy(device::solver_handle);
 
 	return 0;
 }

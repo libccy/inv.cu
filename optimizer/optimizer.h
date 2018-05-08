@@ -2,6 +2,8 @@
 
 class Optimizer {
 protected:
+	cusolverDnHandle_t solver_handle;
+
     Misfit *misfit;
     Solver *solver;
 
@@ -18,7 +20,7 @@ protected:
     float *ls_gtp;
 
     bool inv_parameter[3];
-    size_t inv_iteration_cycle;
+    size_t inv_cycle;
     size_t inv_iteration;
     float inv_sharpen;
 
@@ -77,9 +79,148 @@ protected:
         return acos(xy / sqrt(xx * yy));
     };
 
+    size_t getHistory(float* &x, float* &f, size_t step_count) {
+        x = host::create(step_count + 1);
+        f = host::create(step_count + 1);
+        for(size_t i = 0; i < step_count + 1; i++){
+            size_t j = ls_count - 1 - step_count + i;
+            x[i] = ls_lens[j];
+            f[i] = ls_vals[j];
+        }
+        for(int i = 0; i < step_count + 1; i++){
+            for(int j = i + 1; j < step_count + 1; j++){
+                if(x[j] < x[i]){
+                    float tmp;
+                    tmp = x[i]; x[i] = x[j]; x[j] = tmp;
+                    tmp = f[i]; f[i] = f[j]; f[j] = tmp;
+                }
+            }
+        }
+        update_count = 0;
+        for(size_t i = 0; i < ls_count; i++){
+            if(fabs(ls_lens[i]) < 1e-6){
+                update_count++;
+            }
+        }
+        if (update_count > 0) {
+            update_count--;
+        }
+        return update_count;
+    };
+    size_t argmin(float *f, int n){
+        float min = f[0];
+        size_t idx = 0;
+        for(size_t i = 1; i < n; i++){
+            if(f[i] < min){
+                min = f[i];
+                idx = i;
+            }
+        }
+        return idx;
+    };
+    bool checkBracket(float *x, float *f, int n){
+        size_t imin = argmin(f, n);
+        float fmin = f[imin];
+        if(fmin < f[0]){
+            for(size_t i = imin; i < n; i++){
+                if(f[i] > fmin){
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+    bool goodEnough(float *x, float *f, int n, float &x0){
+        float thresh = log10(ls_thresh);
+        if(!checkBracket(x, f, n)){
+            return false;
+        }
+        float p[3];
+        size_t idx = argmin(f, n) - 1;
+        size_t fitlen = std::min(4, n - idx);
+        polyfit(x + idx, f + idx, p, fitlen);
+        if(p[0] <= 0){
+            std::cout << "  line search error" << std::endl;
+        }
+        else{
+            x0 = -p[1] / (2 * p[0]);
+            for(size_t i = 1; i < n; i++){
+                if(fabs(log10(x[i] / x0)) < thresh){
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+    static float backtrack2(float f0, float g0, float x1, float f1, float b1, float b2){
+        float x2 = -g0 * x1 * x1 / (2  *(f1 - f0 - g0 * x1));
+        if(x2 > b2 * x1){
+            x2 = b2 * x1;
+        }
+        else if(x2 < b1 * x1){
+            x2 = b1 * x1;
+        }
+        return x2;
+    };
     float bracket(size_t step_count, float step_max, int &status) {
-        status = 1;
-        return step_max;
+        float *x, *f, alpha;
+        size_t update_count = getHistory(x, f, step_count);
+
+        if (step_count == 0) {
+            if (update_count == 0) {
+                alpha = 1 / ls_gtg[inv_count - 1];
+                status = 0;
+            }
+            else {
+                size_t idx = argmin(ls_vals, ls_count - 1);
+                alpha = ls_lens[idx] * ls_gtp[inv_count - 2] / ls_gtp[inv_count - 1];
+                status = 0;
+            }
+        }
+        else if(checkBracket(x, f, step_count + 1)){
+            if(goodEnough(x, f, step_count + 1, alpha)){
+                alpha = x[argmin(f, step_count + 1)];
+                status = 1;
+            }
+            else{
+                status = 0;
+            }
+        }
+        else if(step_count <= ls_step){
+            size_t i;
+            for(i = 1; i < step_count + 1; i++){
+                if(f[i] > f[0]) break;
+            }
+            if(i == step_count + 1){
+                alpha = 1.618034 * x[step_count];
+                status = 0;
+            }
+            else{
+                float slope = ls_gtp[inv_count - 1] / ls_gtg[inv_count - 1];
+                alpha = backtrack2(f[0], slope, x[1], f[1], 0.1, 0.5);
+                status = 0;
+            }
+        }
+        else{
+            alpha = 0;
+            status = -1;
+        }
+
+        if(alpha > ls_step_max){
+            if(step_count == 0){
+                alpha = 0.618034 * ls_step_max;
+                status = 0;
+            }
+            else{
+                alpha = ls_step_max;
+                status = 1;
+            }
+        }
+
+        free(x);
+        free(f);
+
+        return alpha;
     };
     float backtrack(size_t step_count, float step_max, int &status) {
         status = 1;
@@ -190,7 +331,7 @@ public:
         inv_parameter[mu] = solver->inv_mu;
         inv_parameter[rho] = solver->inv_rho;
         inv_iteration = config->i["inv_iteration"];
-        inv_iteration_cycle = config->i["inv_iteration_cycle"];
+        inv_cycle = config->i["inv_cycle"];
         inv_sharpen = config->f["inv_sharpen"];
 
         ls_step = config->i["ls_step"];
@@ -222,5 +363,10 @@ public:
         eval_count = 0;
         inv_count = 0;
         ls_count = 0;
+
+        cusolverDnCreate(&solver_handle);
+    };
+    virtual ~Optimizer() {
+    	cusolverDnDestroy(solver_handle);
     };
 };

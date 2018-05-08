@@ -82,7 +82,6 @@ namespace device {
 	__constant__ float pi = 3.1415927;
 
 	cublasHandle_t cublas_handle = NULL;
-	cusolverDnHandle_t solver_handle = NULL;
 	// size_t max_thread = 1024;
 
 	template<typename T = float>
