@@ -8,8 +8,47 @@ protected:
 	float **obs_y;
 	float **obs_z;
 
+	virtual float run(float *, float *, float *) = 0;
+
 public:
 	float ref;
+	float run(bool kernel = false) {
+		float misfit = 0;
+		size_t &nsrc = solver->nsrc, &nrec = solver->nrec, &nt = solver->nt;
+		Dim dim(nt, nrec);
+		if (kernel) {
+			solver->initKernels();
+		}
+		if(!solver->sh){
+	        device::init(solver->adstf_y, 0.0f, dim);
+	    }
+	    if(!solver->psv){
+	        device::init(solver->adstf_x, 0.0f, dim);
+	        device::init(solver->adstf_z, 0.0f, dim);
+	    }
+		for (size_t isrc = 0; isrc < nsrc; isrc++) {
+			solver->runForward(isrc, true);
+			for (size_t irec = 0; irec < nrec; irec++) {
+				size_t irt = irec * nt;
+				if (solver->sh) {
+					misfit += run(solver->out_y + irt, obs_y[isrc] + irt, solver->adstf_y + irt);
+				}
+				if (solver->psv) {
+					misfit += run(solver->out_x + irt, obs_x[isrc] + irt, solver->adstf_x + irt);
+					misfit += run(solver->out_z + irt, obs_z[isrc] + irt, solver->adstf_z + irt);
+				}
+			}
+			if (kernel) {
+				solver->runAdjoint(isrc);
+			}
+		}
+		if (kernel && filter) {
+			filter->apply(solver->k_lambda);
+			filter->apply(solver->k_mu);
+			filter->apply(solver->k_rho);
+		}
+		return misfit;
+	};
 	void importTraces(size_t isrc, string &path) {
 		size_t &nrec = solver->nrec, &nt = solver->nt;
 
@@ -49,44 +88,6 @@ public:
 
 		free(buffer);
 	};
-	float run(bool kernel = false) {
-		float misfit = 0;
-		size_t &nsrc = solver->nsrc, &nrec = solver->nrec, &nt = solver->nt;
-		Dim dim(nt, nrec);
-		if (kernel) {
-			solver->initKernels();
-		}
-		if(!solver->sh){
-	        device::init(solver->adstf_y, 0.0f, dim);
-	    }
-	    if(!solver->psv){
-	        device::init(solver->adstf_x, 0.0f, dim);
-	        device::init(solver->adstf_z, 0.0f, dim);
-	    }
-		for (size_t isrc = 0; isrc < nsrc; isrc++) {
-			solver->runForward(isrc, true);
-			for (size_t irec = 0; irec < nrec; irec++) {
-				size_t irt = irec * nt;
-				if (solver->sh) {
-					misfit += run(solver->out_y + irt, obs_y[isrc] + irt, solver->adstf_y + irt);
-				}
-				if (solver->psv) {
-					misfit += run(solver->out_x + irt, obs_x[isrc] + irt, solver->adstf_x + irt);
-					misfit += run(solver->out_z + irt, obs_z[isrc] + irt, solver->adstf_z + irt);
-				}
-			}
-			if (kernel) {
-				solver->runAdjoint(isrc);
-			}
-		}
-		if (kernel && filter) {
-			filter->apply(solver->k_lambda);
-			filter->apply(solver->k_mu);
-			filter->apply(solver->k_rho);
-		}
-		return misfit;
-	};
-	virtual float run(float *, float *, float *) = 0;
 	virtual void init(Config *config, Solver *solver, Filter *filter = nullptr) {
 		this->solver = solver;
 		this->filter = filter;

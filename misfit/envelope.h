@@ -59,27 +59,6 @@ protected:
     float *ersd;
     float *etmp;
 
-	void hilbert(float *x, cufftComplex *data){
-		using namespace _EnvelopeMisfit;
-		size_t &nt = solver->nt;
-	    copyR2C<<<nt, 1>>>(data, x);
-	    cufftExecC2C(cufft_handle, data, data, CUFFT_FORWARD);
-	    _hilbert<<<nt, 1>>>(data, nt);
-	    cufftExecC2C(cufft_handle, data, data, CUFFT_INVERSE);
-	}
-
-public:
-	void init(Config *config, Solver *solver, Filter *filter = nullptr) {
-		Misfit::init(config, solver, filter);
-		size_t &nt = solver->nt;
-		cudaMalloc((void**)&csyn, nt * sizeof(cufftComplex));
-        cudaMalloc((void**)&cobs, nt * sizeof(cufftComplex));
-        esyn = device::create(nt);
-        eobs = device::create(nt);
-        ersd = device::create(nt);
-        etmp = device::create(nt);
-		cufftPlan1d(&cufft_handle, nt, CUFFT_C2C, 1);
-	};
 	float run(float *syn, float *obs, float *adstf){
 		using namespace _EnvelopeMisfit;
 		size_t &nt = solver->nt;
@@ -100,6 +79,27 @@ public:
 	    prepareEnvelopeSTF<<<nt, 1>>>(adstf, etmp, syn, ersd, nt);
 	    device::calc(ersd, 1, esyn, -1, eobs, dim);
 		return device::norm(ersd, nt) * sqrt(solver->dt);
+	};
+	void hilbert(float *x, cufftComplex *data){
+		using namespace _EnvelopeMisfit;
+		size_t &nt = solver->nt;
+	    copyR2C<<<nt, 1>>>(data, x);
+	    cufftExecC2C(cufft_handle, data, data, CUFFT_FORWARD);
+	    _hilbert<<<nt, 1>>>(data, nt);
+	    cufftExecC2C(cufft_handle, data, data, CUFFT_INVERSE);
+	}
+
+public:
+	void init(Config *config, Solver *solver, Filter *filter = nullptr) {
+		Misfit::init(config, solver, filter);
+		size_t &nt = solver->nt;
+		cudaMalloc((void**)&csyn, nt * sizeof(cufftComplex));
+        cudaMalloc((void**)&cobs, nt * sizeof(cufftComplex));
+        esyn = device::create(nt);
+        eobs = device::create(nt);
+        ersd = device::create(nt);
+        etmp = device::create(nt);
+		cufftPlan1d(&cufft_handle, nt, CUFFT_C2C, 1);
 	};
 	~EnvelopeMisfit() {
 		cufftDestroy(cufft_handle);

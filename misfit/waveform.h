@@ -31,6 +31,13 @@ class WaveformMisfit : public Misfit {
 protected:
 	float *misfit;
 	float *tw;
+	
+	float run(float *syn, float *obs, float *adstf){
+		using namespace _WaveformMisfit;
+		size_t &nt = solver->nt;
+		diff<<<nt, 1>>>(syn, obs, adstf, misfit, tw, nt);
+		return device::norm(misfit, nt) * sqrt(solver->dt);
+	};
 
 public:
 	void init(Config *config, Solver *solver, Filter *filter = nullptr) {
@@ -40,11 +47,5 @@ public:
 		misfit = device::create(nt);
 		tw = device::create(nt);
 		taper<<<nt, 1>>>(tw, solver->dt, nt);
-	};
-	float run(float *syn, float *obs, float *adstf){
-		using namespace _WaveformMisfit;
-		size_t &nt = solver->nt;
-		diff<<<nt, 1>>>(syn, obs, adstf, misfit, tw, nt);
-		return device::norm(misfit, nt) * sqrt(solver->dt);
 	};
 };
