@@ -31,7 +31,7 @@ protected:
     size_t inv_count;
     size_t ls_count;
 
-    float pamax(float **a) {
+    float p_amax(float **a) {
         float amax_a = 0;
         for (size_t ip = 0; ip < 3; ip++) {
             if (inv_parameter[ip]) {
@@ -40,7 +40,7 @@ protected:
         }
         return amax_a;
     };
-    float pdot(float **a, float **b) {
+    float p_dot(float **a, float **b) {
         float dot_ab = 0;
         for (size_t ip = 0; ip < 3; ip++) {
             if (inv_parameter[ip]) {
@@ -49,26 +49,32 @@ protected:
         }
         return dot_ab;
     };
-    void pcalc(float **c, float ka, float **a) {
+    void p_calc(float **c, float ka, float **a) {
         for (size_t ip = 0; ip < 3; ip++) {
             if (inv_parameter[ip]) {
                 device::calc(c[ip], ka, a[ip], solver->dim);
             }
         }
     };
-    void pcalc(float **c, float ka, float **a, float kb, float **b) {
+    void p_calc(float **c, float ka, float **a, float kb, float **b) {
         for (size_t ip = 0; ip < 3; ip++) {
             if (inv_parameter[ip]) {
                 device::calc(c[ip], ka, a[ip], kb, b[ip], solver->dim);
             }
         }
     };
-    void pcopy(float **data, float **source) {
+    void p_copy(float **data, float **source) {
         for (size_t ip = 0; ip < 3; ip++) {
             if (inv_parameter[ip]) {
                 device::copy(data[ip], source[ip], solver->dim);
             }
         }
+    };
+    float p_angle(float **p, float **g, float k){
+        float xx = p_dot(p, p);
+        float yy = p_dot(g, g);
+        float xy = k * p_dot(p, g);
+        return acos(xy / sqrt(xx * yy));
     };
 
     float bracket(size_t step_count, float step_max, int &status) {
@@ -79,22 +85,16 @@ protected:
         status = 1;
         return step_max;
     };
-    float calcAngle(float **p, float **g, float k){
-        float xx = pdot(p, p);
-        float yy = pdot(g, g);
-        float xy = k * pdot(p, g);
-        return acos(xy / sqrt(xx * yy));
-    };
 
     virtual float calcStep(size_t, float, int &) = 0;
     virtual int lineSearch(float f) {
         int status = 0;
         float alpha = 0;
 
-        float norm_m = pamax(m_new);
-        float norm_p = pamax(p_new);
-        float gtg = pdot(g_new, g_new);
-        float gtp = pdot(g_new, p_new);
+        float norm_m = p_amax(m_new);
+        float norm_p = p_amax(p_new);
+        float gtg = p_dot(g_new, g_new);
+        float gtp = p_dot(g_new, p_new);
 
         float step_max = ls_step_max * norm_m / norm_p;
         size_t step_count = 0;
@@ -114,7 +114,7 @@ protected:
         }
 
         while(true){
-            pcalc(m_new, 1, m_new, alpha - alpha_old, p_new);
+            p_calc(m_new, 1, m_new, alpha - alpha_old, p_new);
             alpha_old = alpha;
             ls_lens[ls_count] = alpha;
             ls_vals[ls_count] = misfit->run(false);
@@ -130,12 +130,12 @@ protected:
 
             if(status > 0){
                 std::cout << "  alpha = " << alpha << std::endl;
-                pcalc(m_new, 1, m_new, alpha - alpha_old, p_new);
+                p_calc(m_new, 1, m_new, alpha - alpha_old, p_new);
                 return status;
             }
             else if(status < 0){
-                pcalc(m_new, 1, m_new, -alpha_old, p_new);
-                if(calcAngle(p_new, g_new, -1) < 1e-3){
+                p_calc(m_new, 1, m_new, -alpha_old, p_new);
+                if(p_angle(p_new, g_new, -1) < 1e-3){
                     std::cout << "  line search failed" << std::endl;
                     return status;
                 }
@@ -149,7 +149,7 @@ protected:
     };
     virtual int computeDirection() = 0;
     virtual void restartSearch() {
-        pcalc(p_new, -1, g_new);
+        p_calc(p_new, -1, g_new);
         ls_count = 0;
         inv_count = 1;
     };
@@ -173,9 +173,9 @@ public:
                 break;
             }
 
-            pcopy(m_old, m_new);
-            pcopy(p_old, p_new);
-            pcopy(g_old, g_new);
+            p_copy(m_old, m_new);
+            p_copy(p_old, p_new);
+            p_copy(g_old, g_new);
 
             solver->exportKernels(iter + 1);
             solver->exportModels(iter + 1);
