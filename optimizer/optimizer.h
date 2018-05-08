@@ -1,5 +1,17 @@
 #pragma once
 
+namespace _Optimizer {
+    __global__ void reduceSystem(const double * __restrict d_in1, double * __restrict d_out1, const double * __restrict d_in2, double * __restrict d_out2, const int M, const int N) {
+        const int i = blockIdx.x;
+        const int j = threadIdx.x;
+
+        if ((i < N) && (j < N)){
+            d_out1[j * N + i] = d_in1[j * M + i];
+            d_out2[j * N + i] = d_in2[j * M + i];
+        }
+    }
+}
+
 class Optimizer {
 protected:
 	cusolverDnHandle_t solver_handle;
@@ -79,6 +91,81 @@ protected:
         return acos(xy / sqrt(xx * yy));
     };
 
+    void solveQR(double *h_A, double *h_B, double *XC, size_t nrows, size_t ncols){
+        using namespace _Optimizer;
+        Dim dim(nrows, ncols);
+        int work_size = 0;
+        int *devInfo = device::create<int>(1);
+
+        double *d_A = device::create<double>(nrows * ncols);
+        cudaMemcpy(d_A, h_A, nrows * ncols * sizeof(double), cudaMemcpyHostToDevice);
+
+        double *d_TAU = device::create<double>(min(nrows, ncols));
+        cusolverDnDgeqrf_bufferSize(solver_handle, nrows, ncols, d_A, nrows, &work_size);
+        double *work = device::create<double>(work_size);
+
+        cusolverDnDgeqrf(solver_handle, nrows, ncols, d_A, nrows, d_TAU, work, work_size, devInfo);
+
+        double *d_Q = device::create<double>(nrows * nrows);
+        cusolverDnDormqr(solver_handle, CUBLAS_SIDE_LEFT, CUBLAS_OP_N, nrows, ncols, min(nrows, ncols), d_A, nrows, d_TAU, d_Q, nrows, work, work_size, devInfo);
+
+        double *d_C = device::create<double>(nrows * nrows);
+        device::init(d_C, 0.0, dim);
+        cudaMemcpy(d_C, h_B, nrows * sizeof(double), cudaMemcpyHostToDevice);
+
+        cusolverDnDormqr(solver_handle, CUBLAS_SIDE_LEFT, CUBLAS_OP_T, nrows, ncols, min(nrows, ncols), d_A, nrows, d_TAU, d_C, nrows, work, work_size, devInfo);
+
+        double *d_R = device::create<double>(ncols * ncols);
+        double *d_B = device::create<double>(ncols * ncols);
+        reduceSystem<<<ncols, ncols>>>(d_A, d_R, d_C, d_B, nrows, ncols);
+
+        const double alpha = 1.;
+        cublasDtrsm(device::cublas_handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, ncols, ncols,
+            &alpha, d_R, ncols, d_B, ncols);
+        cudaMemcpy(XC, d_B, ncols * sizeof(double), cudaMemcpyDeviceToHost);
+
+        cudaFree(d_A);
+        cudaFree(d_B);
+        cudaFree(d_C);
+        cudaFree(d_Q);
+        cudaFree(d_R);
+        cudaFree(d_TAU);
+        cudaFree(devInfo);
+        cudaFree(work);
+    };
+    double polyfit(double *x, double *y, double *p, size_t n){
+        double *A = host::create<double>(3 * n);
+        for(size_t i = 0; i < n; i++){
+            A[i] = x[i] * x[i];
+            A[i + n] = x[i];
+            A[i + n * 2] = 1;
+        }
+        solveQR(A, y, p, n, 3);
+        double rss = 0;
+        for(size_t i = 0; i < n; i++){
+            double ei = p[0] * x[i] * x[i] + p[1] * x[i] + p[2];
+            rss += pow(y[i] - ei, 2);
+        }
+        return rss;
+    };
+    float polyfit(float *fx, float *fy, float *fp, size_t n){
+        double *x = host::create<double>(n);
+        double *y = host::create<double>(n);
+        double *p = host::create<double>(3);
+        for(size_t i = 0; i < n; i++){
+            x[i] = fx[i];
+            y[i] = fy[i];
+        }
+        float rss = polyfit(x, y, p, n);
+        for(size_t i = 0; i < 3; i++){
+            fp[i] = p[i];
+        }
+        free(x);
+        free(y);
+        free(p);
+        return rss;
+    };
+
     size_t getHistory(float* &x, float* &f, size_t step_count) {
         x = host::create(step_count + 1);
         f = host::create(step_count + 1);
@@ -96,7 +183,7 @@ protected:
                 }
             }
         }
-        update_count = 0;
+        size_t update_count = 0;
         for(size_t i = 0; i < ls_count; i++){
             if(fabs(ls_lens[i]) < 1e-6){
                 update_count++;
@@ -137,7 +224,7 @@ protected:
         }
         float p[3];
         size_t idx = argmin(f, n) - 1;
-        size_t fitlen = std::min(4, n - idx);
+        size_t fitlen = std::min<size_t>(4, n - idx);
         polyfit(x + idx, f + idx, p, fitlen);
         if(p[0] <= 0){
             std::cout << "  line search error" << std::endl;
@@ -206,7 +293,7 @@ protected:
             status = -1;
         }
 
-        if(alpha > ls_step_max){
+        if(alpha > step_max){
             if(step_count == 0){
                 alpha = 0.618034 * ls_step_max;
                 status = 0;
