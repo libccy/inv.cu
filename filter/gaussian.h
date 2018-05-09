@@ -7,8 +7,9 @@ namespace _GaussianFilter {
 		return (1 / (sqrtf(2 * device::pi) * sigmaf)) * expf(-xf * xf / (2 * sigmaf * sigmaf));
 	}
 	__global__ void initialiseGaussian(float *gsum, size_t sigma, Dim dim){
-		size_t i, j, k;
+		int i, j, k;
 		dim(i, j, k);
+		if (k < 0) return;
 		float sumx = 0;
 		for (size_t n = 0; n < dim.nx; n++) {
 			sumx += gaussian(i - n, sigma);
@@ -20,8 +21,9 @@ namespace _GaussianFilter {
 		gsum[k] = sumx * sumz;
 	}
 	__global__ void filterKernelX(float *data, float *gtmp, size_t sigma, Dim dim){
-		size_t i, j, k;
+		int i, j, k;
 		dim(i, j, k);
+		if (k < 0) return;
 		float sumx = 0;
 		for (size_t n = 0; n < dim.nx; n++) {
 			sumx += gaussian(i - n, sigma) * data[dim.k(n, j)];
@@ -29,8 +31,9 @@ namespace _GaussianFilter {
 		gtmp[k] = sumx;
 	}
 	__global__ void filterKernelZ(float *data, float *gtmp, float *gsum, size_t sigma, Dim dim){
-		size_t i, j, k;
+		int i, j, k;
 		dim(i, j, k);
+		if (k < 0) return;
 		float sumz = 0;
 		for (size_t n = 0; n < dim.nz; n++) {
 			sumz += gaussian(j - n, sigma) * gtmp[dim.k(i, n)];

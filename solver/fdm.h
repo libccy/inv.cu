@@ -6,7 +6,7 @@ namespace _FdmSolver {
 			float *device_x, float *device_z,
 			float *device_vp, float *device_vs, float *device_rho, size_t npt,
 			float dmax, float dx, float dz, Dim dim) {
-		size_t k = dim();
+		int k = dim(); if (k < 0) return;
 		float x = blockIdx.x * dx;
 		float z = threadIdx.x * dz;
 		float dmin = dmax;
@@ -23,7 +23,7 @@ namespace _FdmSolver {
 		}
 	}
 	__global__ void vps2lm(float *lambda, float *mu, float *rho, Dim dim) {
-		size_t k = dim();
+		int k = dim(); if (k < 0) return;
 		float &vp = lambda[k];
 		float &vs = mu[k];
 		if (vp > vs) {
@@ -35,7 +35,7 @@ namespace _FdmSolver {
 		mu[k] = rho[k] * vs * vs;
 	}
 	__global__ void lm2vps(float *vp, float *vs, float *rho, Dim dim) {
-		size_t k = dim();
+		int k = dim(); if (k < 0) return;
 		float &lambda = vp[k];
 		float &mu = vs[k];
 		vp[k] = sqrt((lambda + 2 * mu) / rho[k]);
@@ -48,8 +48,9 @@ namespace _FdmSolver {
 	__global__ void initAbsbound(
 		float *absbound, size_t abs_width, float abs_alpha,
 		bool abs_left, bool abs_right, bool abs_bottom, bool abs_top, Dim dim) {
-	    size_t i, j, k;
+	    int i, j, k;
 		dim(i, j, k);
+		if (k < 0) return;
 	    absbound[k] = 1;
 
 	    if (abs_left) {
@@ -75,8 +76,9 @@ namespace _FdmSolver {
 	}
 
 	__global__ void divSY(float *dsy, float *sxy, float *szy, float dx, float dz, Dim dim){
-	    size_t i, j, k;
+	    int i, j, k;
 		dim(i, j, k);
+		if (k < 0) return;
 	    if (i >= 2 && i < dim.nx - 2) {
 			dsy[k] = 9 * (sxy[k] - sxy[dim(-1,0)]) / (8 * dx) - (sxy[dim(1,0)] - sxy[dim(-2,0)]) / (24 * dx);
 	    }
@@ -88,8 +90,9 @@ namespace _FdmSolver {
 	    }
 	}
 	__global__ void divSXZ(float *dsx, float *dsz, float *sxx, float *szz, float *sxz, float dx, float dz, Dim dim){
-		size_t i, j, k;
+		int i, j, k;
 		dim(i, j, k);
+		if (k < 0) return;
 	    if (i >= 2 && i < dim.nx - 2) {
 	        dsx[k] = 9 * (sxx[k] - sxx[dim(-1,0)])/(8 * dx) - (sxx[dim(1,0)] - sxx[dim(-2,0)]) / (24 * dx);
 	        dsz[k] = 9 * (sxz[k] - sxz[dim(-1,0)])/(8 * dx) - (sxz[dim(1,0)] - sxz[dim(-2,0)]) / (24 * dx);
@@ -104,8 +107,9 @@ namespace _FdmSolver {
 	    }
 	}
 	__global__ void divVY(float *dvydx, float *dvydz, float *vy, float dx, float dz, Dim dim){
-		size_t i, j, k;
+		int i, j, k;
 		dim(i, j, k);
+		if (k < 0) return;
 	    if (i >= 1 && i < dim.nx - 2) {
 	        dvydx[k] = 9 * (vy[dim(1,0)] - vy[k]) / (8 * dx) - (vy[dim(2,0)] - vy[dim(-1,0)]) / (24 * dx);
 	    }
@@ -120,8 +124,9 @@ namespace _FdmSolver {
 	    }
 	}
 	__global__ void divVXZ(float *dvxdx, float *dvxdz, float *dvzdx, float *dvzdz, float *vx, float *vz, float dx, float dz, Dim dim){
-		size_t i, j, k;
+		int i, j, k;
 		dim(i, j, k);
+		if (k < 0) return;
 	    if (i >= 1 && i < dim.nx - 2) {
 	        dvxdx[k] = 9 * (vx[dim(1,0)] - vx[k]) / (8 * dx) - (vx[dim(2,0)] - vx[dim(-1,0)]) / (24 * dx);
 	        dvzdx[k] = 9 * (vz[dim(1,0)] - vz[k]) / (8 * dx) - (vz[dim(2,0)] - vz[dim(-1,0)]) / (24 * dx);
@@ -141,24 +146,24 @@ namespace _FdmSolver {
 	}
 
 	__global__ void updateSY(float *sxy, float *szy, float *dvydx, float *dvydz, float *mu, float dt, Dim dim){
-		size_t k = dim();
+		int k = dim(); if (k < 0) return;
 		sxy[k] += dt * mu[k] * dvydx[k];
 		szy[k] += dt * mu[k] * dvydz[k];
 	}
 	__global__ void updateSXZ(float *sxx, float *szz, float *sxz, float *dvxdx, float *dvxdz, float *dvzdx, float *dvzdz,
 		float *lambda, float *mu, float dt, Dim dim){
-		size_t k = dim();
+		int k = dim(); if (k < 0) return;
 		sxx[k] += dt * ((lambda[k] + 2 * mu[k]) * dvxdx[k] + lambda[k] * dvzdz[k]);
 		szz[k] += dt * ((lambda[k] + 2 * mu[k]) * dvzdz[k] + lambda[k] * dvxdx[k]);
 		sxz[k] += dt * (mu[k] * (dvxdz[k] + dvzdx[k]));
 	}
 	__global__ void updateVY(float *vy, float *uy, float *dsy, float *rho, float *absbound, float dt, Dim dim){
-		size_t k = dim();
+		int k = dim(); if (k < 0) return;
 		vy[k] = absbound[k] * (vy[k] + dt * dsy[k] / rho[k]);
 		uy[k] += vy[k] * dt;
 	}
 	__global__ void updateVXZ(float *vx, float *vz, float *ux, float *uz, float *dsx, float *dsz, float *rho, float *absbound, float dt, Dim dim){
-		size_t k = dim();
+		int k = dim(); if (k < 0) return;
 		vx[k] = absbound[k] * (vx[k] + dt * dsx[k] / rho[k]);
 		vz[k] = absbound[k] * (vz[k] + dt * dsz[k] / rho[k]);
 		ux[k] += vx[k] * dt;
@@ -201,25 +206,25 @@ namespace _FdmSolver {
 	}
 
 	__global__ void interactionRhoY(float *k_rho, float *vy, float *vy_fw, float ndt, Dim dim){
-	    size_t k = dim();
+	    int k = dim(); if (k < 0) return;
 	    k_rho[k] -= vy_fw[k] * vy[k] * ndt;
 	}
 	__global__ void interactionRhoXZ(float *k_rho, float *vx, float *vx_fw, float *vz, float *vz_fw, float ndt, Dim dim){
-	    size_t k = dim();
+	    int k = dim(); if (k < 0) return;
 	    k_rho[k] -= (vx_fw[k] * vx[k] + vz_fw[k] * vz[k]) * ndt;
 	}
 	__global__ void interactionMuY(float *k_mu, float *dvydx, float *dvydx_fw, float *dvydz, float *dvydz_fw, float ndt, Dim dim){
-	    size_t k = dim();
+	    int k = dim(); if (k < 0) return;
 	    k_mu[k] -= (dvydx[k] * dvydx_fw[k] + dvydz[k] * dvydz_fw[k]) * ndt;
 	}
 	__global__ void interactionMuXZ(float *k_mu, float *dvxdx, float *dvxdx_fw, float *dvxdz, float *dvxdz_fw,
 	    float *dvzdx, float *dvzdx_fw, float *dvzdz, float *dvzdz_fw, float ndt, Dim dim){
-	    size_t k = dim();
+	    int k = dim(); if (k < 0) return;
 	    k_mu[k] -= (2 * dvxdx[k] * dvxdx_fw[k] + 2 * dvzdz[k] * dvzdz_fw[k] +
 	        (dvxdz[k] + dvzdx[k]) * (dvzdx_fw[k] + dvxdz_fw[k])) * ndt;
 	}
 	__global__ void interactionLambdaXZ(float *k_lambda, float *dvxdx, float *dvxdx_fw, float *dvzdz, float *dvzdz_fw, float ndt, Dim dim){
-	    size_t k = dim();
+	    int k = dim(); if (k < 0) return;
 	    k_lambda[k] -= ((dvxdx[k] + dvzdz[k]) * (dvxdx_fw[k] + dvzdz_fw[k])) * ndt;
 	}
 }

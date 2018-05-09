@@ -2,50 +2,38 @@
 
 class Dim {
 public:
-	size_t nx;
-	size_t nz;
-	size_t dg;
-	size_t db;
-	bool row_major;
+	int nx;
+	int nz;
+	int dg;
+	int db;
 	Dim() {};
-	Dim(size_t nx, size_t nz, bool row_major = true) {
-		this->init(nx, nz, row_major);
+	Dim(int nx, int nz) {
+		this->init(nx, nz);
 	};
-	void init(size_t nx, size_t nz, bool row_major = true) {
+	void init(int nx, int nz) {
 		this->nx = nx;
 		this->nz = nz;
-		this->row_major = row_major;
 		dg = nx;
 		db = nz;
 	};
-	__device__ size_t k(size_t i, size_t j) {
-		if (row_major) {
-			return i * nz + j;
-		}
-		else {
-			return j * nx + i;
-		}
+	__device__ int k(int i, int j) {
+		return i * nz + j;
 	};
-	__device__ void operator()(size_t &i, size_t &j, size_t &k, int di = 0, int dj = 0) {
+	__device__ void operator()(int &i, int &j, int &k, int di = 0, int dj = 0) {
 		i = blockIdx.x + di;
 		j = threadIdx.x + dj;
 		k = this->k(i, j);
 	};
-	__device__ size_t operator()(int di = 0, int dj = 0) {
-		size_t i, j, k;
+	__device__ int operator()(int di = 0, int dj = 0) {
+		int i, j, k;
 		this->operator()(i, j, k, di, dj);
 		return k;
 	};
 
-	size_t hk(size_t i, size_t j) {
-		if (row_major) {
-			return i * nz + j;
-		}
-		else {
-			return j * nx + i;
-		}
+	int hk(int i, int j) {
+		return i * nz + j;
 	};
-	operator size_t() const {
+	operator int() const {
 		return nx * nz;
 	}
 };
@@ -113,12 +101,12 @@ namespace device {
 
 	template<typename T = float>
 	__global__ void _copy(T *data, T *source, Dim dim) {
-		size_t k = dim();
+		int k = dim(); if (k < 0) return;
 		data[k] = source[k];
 	}
 	template<typename T = float>
 	__global__ void _init(T *data, T value, Dim dim){
-		size_t k = dim();
+		int k = dim(); if (k < 0) return;
 		data[k] = value;
 	}
 	template<typename T = float>
@@ -143,15 +131,15 @@ namespace device {
 	}
 
 	__global__ void _calc(float *c, float ka, float *a, Dim dim) {
-		size_t k = dim();
+		int k = dim(); if (k < 0) return;
 		c[k] = ka * a[k];
 	}
 	__global__ void _calc(float *c, float ka, float *a, float kb, float *b, Dim dim) {
-		size_t k = dim();
+		int k = dim(); if (k < 0) return;
 		c[k] = ka * a[k] + kb * b[k];
 	}
 	__global__ void _calc(float *c, float *a, float *b, Dim dim) {
-		size_t k = dim();
+		int k = dim(); if (k < 0) return;
 		c[k] = a[k] * b[k];
 	}
 	void calc(float *c, float ka, float *a, Dim &dim) {
