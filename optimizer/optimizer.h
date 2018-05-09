@@ -85,7 +85,21 @@ protected:
             }
         }
     };
-    float p_angle(float **p, float **g, float k){
+    void p_toHost(float **h_data, float **data) {
+        for (size_t ip = 0; ip < 3; ip++) {
+            if (inv_parameter[ip]) {
+                device::toHost(h_data[ip], data[ip], solver->dim);
+            }
+        }
+    };
+    void p_toDevice(float **data, float **h_data) {
+        for (size_t ip = 0; ip < 3; ip++) {
+            if (inv_parameter[ip]) {
+                host::toDevice(data[ip], h_data[ip], solver->dim);
+            }
+        }
+    };
+    float p_angle(float **p, float **g, float k = 1){
         float xx = p_dot(p, p);
         float yy = p_dot(g, g);
         float xy = k * p_dot(p, g);
@@ -445,13 +459,12 @@ public:
         ls_gtg = host::create(inv_iteration);
         ls_gtp = host::create(inv_iteration);
 
-        size_t len = solver->dim;
         m_new = host::create<float *>(3);
         g_new = host::create<float *>(3);
-        m_old = device::create2D(3, len);
-        g_old = device::create2D(3, len);
-        p_new = device::create2D(3, len);
-        p_old = device::create2D(3, len);
+        m_old = device::create2D(3, solver->dim);
+        g_old = device::create2D(3, solver->dim);
+        p_new = device::create2D(3, solver->dim);
+        p_old = device::create2D(3, solver->dim);
 
         m_new[lambda] = solver->lambda;
         m_new[mu] = solver->mu;

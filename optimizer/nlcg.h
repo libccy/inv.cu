@@ -16,12 +16,6 @@ protected:
         float den = p_dot(g_old, g_old);
         return num / den;
     };
-    float descent() {
-        return p_dot(p_new, g_new);
-    };
-    float conjugacy() {
-        return fabs(p_dot(g_new, g_old) / p_dot(g_new, g_new));
-    };
 
     float calcStep(size_t step_count, float step_max, int &status) {
         return bracket(step_count, step_max, status);
@@ -45,11 +39,11 @@ protected:
                 default: beta = 0;
             }
             p_calc(p_new, -1, g_new, beta, p_old);
-            if(conjugacy() > nlcg_thresh){
+            if(p_angle(g_new, g_old) < nlcg_thresh){
                 std::cout << "  restarting NLCG... [loss of conjugacy]" << std::endl;
                 return -1;
             }
-            if(descent() > 0){
+            if(p_dot(p_new, g_new) > 0){
                 std::cout << "  restarting NLCG... [not a descent direction]" << std::endl;
                 return -1;
             }
