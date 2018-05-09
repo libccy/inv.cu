@@ -325,9 +325,35 @@ protected:
         return alpha;
     };
     float backtrack(size_t step_count, float step_max, int &status) {
-        // from here: save 1 misfit calculation?
-        status = 1;
-        return step_max;
+        float *x, *f, alpha;
+        size_t update_count = getHistory(x, f, step_count);
+        size_t idx = argmin(f, step_count + 1);
+
+        if (update_count == 0) {
+            alpha = bracket(step_count, step_max, status);
+        }
+        else if (step_count == 0) {
+            alpha = std::min(1.0f, step_max);
+            status = 0;
+        }
+        else if (f[idx] < f[0]) {
+            alpha = x[idx];
+            status = 1;
+        }
+        else if (step_count <= ls_step) {
+            float slope = ls_gtp[inv_count - 1] / ls_gtg[inv_count - 1];
+            alpha = backtrack2(f[0], slope, x[1], f[1], 0.1, 0.5);
+            status = 0;
+        }
+        else {
+            alpha = 0;
+            status = -1;
+        }
+
+        free(x);
+        free(f);
+
+        return alpha;
     };
 
     virtual float calcStep(size_t, float, int &) = 0;
