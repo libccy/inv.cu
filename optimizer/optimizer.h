@@ -325,7 +325,7 @@ protected:
         return alpha;
     };
     float backtrack(size_t step_count, float step_max, int &status) {
-        // from here: lbfgs recheck nlcg
+        // from here: save 1 misfit calculation?
         status = 1;
         return step_max;
     };
@@ -435,6 +435,7 @@ public:
         else{
             std::cout << "\nElapsed time: " << std::round(time_elapsed) << std::endl;
         }
+        std::cout << "Final misfit: " << misfit->run(false) / misfit->ref << std::endl;
     };
     virtual void init(Config *config, Solver *solver, Misfit *misfit) {
         enum Parameter { lambda = 0, mu = 1, rho = 2 };
