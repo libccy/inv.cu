@@ -11,10 +11,12 @@ int main(int argc, const char *argv[]){
 	for (size_t i = 1; i < argc; i++) {
 		string arg = argv[i];
 		size_t pos = arg.find("=");
-		if (pos != string::npos && arg[0] == '-') {
-			string key = arg.substr(1, pos - 1);
-			string value = arg.substr(pos + 1);
-			cfg[key] = value;
+		if (arg[0] == '-') {
+			if (pos != string::npos && arg[0] == '-') {
+				string key = arg.substr(1, pos - 1);
+				string value = arg.substr(pos + 1);
+				cfg[key] = value;
+			}
 		}
 		else {
 			cfg["config"] = arg;
@@ -55,7 +57,7 @@ int main(int argc, const char *argv[]){
 			misfit->init(config, solver, filter);
 			misfit->run(true);
 			solver->exportAxis();
-			solver->exportKernels();
+			solver->exportKernel();
 			break;
 		}
 	}

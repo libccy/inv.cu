@@ -296,11 +296,11 @@ protected:
 
         if(alpha > step_max){
             if(step_count == 0){
-                alpha = 0.618034 * ls_step_max;
+                alpha = 0.618034 * step_max;
                 status = 0;
             }
             else{
-                alpha = ls_step_max;
+                alpha = step_max;
                 status = 1;
             }
         }
@@ -311,7 +311,7 @@ protected:
         return alpha;
     };
     float backtrack(size_t step_count, float step_max, int &status) {
-        // from here: lbfgs tic/toc
+        // from here: lbfgs recheck nlcg
         status = 1;
         return step_max;
     };
@@ -387,7 +387,7 @@ protected:
 public:
     void run() {
         solver->exportAxis();
-        solver->exportModels();
+        solver->exportModel();
 
         time_start = clock();
         for(int iter = 0; iter < inv_iteration; iter++){
@@ -408,8 +408,8 @@ public:
             p_copy(p_old, p_new);
             p_copy(g_old, g_new);
 
-            solver->exportKernels(iter + 1);
-            solver->exportModels(iter + 1);
+            solver->exportKernel(iter + 1);
+            solver->exportModel(iter + 1);
         }
 
         float time_elapsed = (float)(clock() - time_start) / CLOCKS_PER_SEC;

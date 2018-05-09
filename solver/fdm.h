@@ -463,6 +463,12 @@ public:
 		);
 		vps2lm<<<dim.dg, dim.db>>>(lambda, mu, rho, dim);
 	};
+	void exportModel(size_t n = 0) {
+
+	};
+	void exportKernel(size_t n = 0) {
+
+	};
 	void initKernels() {
 		device::init(k_lambda, 0.0f, dim);
 		device::init(k_mu, 0.0f, dim);

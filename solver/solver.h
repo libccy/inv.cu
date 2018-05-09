@@ -151,16 +151,6 @@ public:
 	float *k_mu;
 	float *k_rho;
 
-	void exportKernels(size_t n = 0) {
-		if(inv_lambda) exportData("k_lambda", host::create(dim, k_lambda), n);
-		if(inv_mu) exportData("k_mu", host::create(dim, k_mu), n);
-		if(inv_rho) exportData("k_rho", host::create(dim, k_rho), n);
-	};
-	void exportModels(size_t n = 0) {
-		if(inv_lambda) exportData("lambda", host::create(dim, lambda), n);
-		if(inv_mu) exportData("mu", host::create(dim, mu), n);
-		if(inv_rho) exportData("rho", host::create(dim, rho), n);
-	};
 	virtual void init(Config *config) {
 		dt = config->f["dt"];
 		obs = config->i["obs"];
@@ -248,6 +238,16 @@ public:
 	};
 	virtual void initKernels() = 0;
 	virtual void exportAxis() = 0;
+	virtual void exportKernel(size_t n = 0) {
+		if(inv_lambda) exportData("k_lambda", host::create(dim, k_lambda), n);
+		if(inv_mu) exportData("k_mu", host::create(dim, k_mu), n);
+		if(inv_rho) exportData("k_rho", host::create(dim, k_rho), n);
+	};
+	virtual void exportModel(size_t n = 0) {
+		if(inv_lambda) exportData("lambda", host::create(dim, lambda), n);
+		if(inv_mu) exportData("mu", host::create(dim, mu), n);
+		if(inv_rho) exportData("rho", host::create(dim, rho), n);
+	};
 	virtual void runForward(int, bool = false, bool = false, bool = false) = 0;
 	virtual void runAdjoint(int, bool = false) = 0;
 	virtual ~Solver() {
