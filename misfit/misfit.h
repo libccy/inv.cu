@@ -145,10 +145,6 @@ public:
 				}
 			}
 			free(buffer);
-			std::cout << device::norm(obs_y[0], nrec*nt) << std::endl;
-		}
-		else {
-			std::cout << device::norm(obs_y[0], nrec*nt) << std::endl;
 		}
 
         solver->importModel(false);

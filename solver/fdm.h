@@ -461,14 +461,29 @@ public:
 			model_x, model_z, model_vp, model_vs, model_rho, model_npt,
 			xmax * xmax + zmax * zmax, dx, dz, dim
 		);
-		vps2lm<<<dim.dg, dim.db>>>(lambda, mu, rho, dim);
+
+		if (model_type == 0) {
+			vps2lm<<<dim.dg, dim.db>>>(lambda, mu, rho, dim);
+		}
 	};
-	// void exportModel(size_t n = 0) {
-	//
-	// };
-	// void exportKernel(size_t n = 0) {
-	//
-	// };
+	void exportModel(size_t n = 0) {
+		if (model_type == 0) {
+			using namespace _FdmSolver;
+			float *lambda1 = device::copy(lambda, dim);
+			float *mu1 = device::copy(mu, dim);
+			float *rho1 = device::copy(rho, dim);
+			lm2vps<<<dim.dg, dim.db>>>(lambda1, mu1, rho1, dim);
+			if(inv_lambda) exportData("vp", host::create(dim, lambda1), n);
+			if(inv_mu) exportData("vs", host::create(dim, mu1), n);
+			if(inv_rho) exportData("rho", host::create(dim, rho1), n);
+			cudaFree(lambda1);
+			cudaFree(mu1);
+			cudaFree(rho1);
+		}
+		else {
+			Solver::exportModel(n);
+		}
+	};
 	void initKernels() {
 		device::init(k_lambda, 0.0f, dim);
 		device::init(k_mu, 0.0f, dim);

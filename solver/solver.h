@@ -236,8 +236,14 @@ public:
 		};
 		read("x", model_x);
 		read("z", model_z);
-		read("vp", model_vp);
-		read("vs", model_vs);
+		if (model_type) {
+			read("lambda", model_vp);
+			read("mu", model_vs);
+		}
+		else {
+			read("vp", model_vp);
+			read("vs", model_vs);
+		}
 		read("rho", model_rho);
 	};
 	virtual void initKernels() = 0;
