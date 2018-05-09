@@ -316,7 +316,7 @@ private:
 	};
 	void exportSnapshot(size_t it) {
 		if (wfe && (it + 1) % wfe == 0) {
-			switch (obs) {
+			switch (trace_type) {
 				case 0: {
 					if (sh) {
 						exportData("vy", host::create(dim, vy), it + 1);
@@ -463,12 +463,12 @@ public:
 		);
 		vps2lm<<<dim.dg, dim.db>>>(lambda, mu, rho, dim);
 	};
-	void exportModel(size_t n = 0) {
-
-	};
-	void exportKernel(size_t n = 0) {
-
-	};
+	// void exportModel(size_t n = 0) {
+	//
+	// };
+	// void exportKernel(size_t n = 0) {
+	//
+	// };
 	void initKernels() {
 		device::init(k_lambda, 0.0f, dim);
 		device::init(k_mu, 0.0f, dim);
@@ -514,13 +514,13 @@ public:
 				src_x_id, src_z_id, isrc, sh, psv, it, nt, dim
 			);
 			divV(dim);
-			if (adjoint || obs == 1) {
+			if (adjoint || trace_type == 1) {
 				saveRec<<<nrec, 1>>>(
 					out_x, out_y, out_z, ux, uy, uz,
 					rec_x_id, rec_z_id, sh, psv, it, nt, dim
 				);
 			}
-			else if(obs == 0) {
+			else if(trace_type == 0) {
 				saveRec<<<nrec, 1>>>(
 					out_x, out_y, out_z, vx, vy, vz,
 					rec_x_id, rec_z_id, sh, psv, it, nt, dim

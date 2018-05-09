@@ -10,7 +10,7 @@ private:
 		path = cfg["config"];
 		size_t pos;
 		string data;
-		std::ifstream infile(path + "/config");
+		std::ifstream infile(path + "/config.ini");
 		while (getline(infile, data)) {
 			pos = data.find_first_not_of(" \t");
 			if (pos != string::npos) {
@@ -42,7 +42,7 @@ private:
 	void loadSource() {
 		size_t pos;
 		string data;
-		std::ifstream infile(path + "/sources");
+		std::ifstream infile(path + "/sources.dat");
 		while (getline(infile, data)) {
 			pos = data.find_first_not_of(" \t");
 			if (pos != string::npos) {
@@ -62,7 +62,7 @@ private:
 	void loadStation() {
 		size_t pos;
 		string data;
-		std::ifstream infile(path + "/stations");
+		std::ifstream infile(path + "/stations.dat");
 		while (getline(infile, data)) {
 			pos = data.find_first_not_of(" \t");
 			if (pos != string::npos) {

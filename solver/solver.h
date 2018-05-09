@@ -8,9 +8,10 @@ class Solver {
 protected:
 	string path;
 
-	size_t obs;
 	size_t sfe;
 	size_t wfe;
+	size_t trace_type;
+	size_t model_type;
 
 	size_t abs_width;
 	float abs_alpha;
@@ -74,7 +75,7 @@ protected:
 			for (size_t i = istr.size(); i < 6; i++) {
 				istr = "0" + istr;
 			}
-			return path + "/output/" + ((!adjoint&&obs==0)?"v":"u") + comp + "_" + istr + ".su";
+			return path + "/output/" + ((!adjoint&&trace_type==0)?"v":"u") + comp + "_" + istr + ".su";
 		};
 		auto write = [&](string comp, float *data) {
 			std::ofstream outfile(filename(comp), std::ofstream::binary);
@@ -153,12 +154,14 @@ public:
 
 	virtual void init(Config *config) {
 		dt = config->f["dt"];
-		obs = config->i["obs"];
 		nt = config->i["nt"];
 		sfe = config->i["sfe"];
 		wfe = config->i["wfe"];
 		sh = (bool) config->i["sh"];
 		psv = (bool) config->i["psv"];
+		
+		trace_type = config->i["trace_type"];
+		model_type = config->i["model_type"];
 
 		abs_alpha = config->f["abs_alpha"];
 		abs_width = config->i["abs_width"];
