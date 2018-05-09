@@ -374,7 +374,7 @@ protected:
         ls_gtp[inv_count - 1] = gtp;
         ls_count++;
 
-        float alpha_old = 0;
+        float alpha_current = 0;
 
         if(ls_step_init && ls_count <= 1){
             alpha = ls_step_init * norm_m / norm_p;
@@ -384,8 +384,8 @@ protected:
         }
 
         while(true){
-            p_calc(m_new, 1, m_new, alpha - alpha_old, p_new);
-            alpha_old = alpha;
+            p_calc(m_new, 1, m_new, alpha - alpha_current, p_new);
+            alpha_current = alpha;
             ls_lens[ls_count] = alpha;
             ls_vals[ls_count] = misfit->run(false);
             ls_count++;
@@ -400,11 +400,11 @@ protected:
 
             if(status > 0){
                 std::cout << "  alpha = " << alpha << std::endl;
-                p_calc(m_new, 1, m_new, alpha - alpha_old, p_new);
+                p_calc(m_new, 1, m_new, alpha - alpha_current, p_new);
                 return status;
             }
             else if(status < 0){
-                p_calc(m_new, 1, m_new, -alpha_old, p_new);
+                p_calc(m_new, 1, m_new, -alpha_current, p_new);
                 if(p_angle(p_new, g_new, -1) < 1e-3){
                     std::cout << "  line search failed" << std::endl;
                     return status;
@@ -440,13 +440,14 @@ public:
             if (computeDirection() < 0) {
                 restartSearch();
             }
-            if (lineSearch(f) < 0) {
-                break;
-            }
 
             p_copy(m_old, m_new);
             p_copy(p_old, p_new);
             p_copy(g_old, g_new);
+
+            if (lineSearch(f) < 0) {
+                break;
+            }
 
             solver->exportKernel(iter + 1);
             solver->exportModel(iter + 1);
