@@ -10,8 +10,6 @@ protected:
 
 	size_t sfe;
 	size_t wfe;
-	size_t trace_type;
-	size_t model_type;
 
 	size_t abs_width;
 	float abs_alpha;
@@ -36,7 +34,7 @@ protected:
 	float *stf_y;
 	float *stf_z;
 
-	void exportTraces(size_t isrc, bool adjoint) {
+	void exportTraces(size_t isrc) {
 		int header1[28];
 		short int header2[2];
 		short int header3[2];
@@ -75,7 +73,7 @@ protected:
 			for (size_t i = istr.size(); i < 6; i++) {
 				istr = "0" + istr;
 			}
-			return path + "/output/" + ((!adjoint&&trace_type==0)?"v":"u") + comp + "_" + istr + ".su";
+			return path + "/output/" + (trace_type?"u":"v") + comp + "_" + istr + ".su";
 		};
 		auto write = [&](string comp, float *data) {
 			std::ofstream outfile(filename(comp), std::ofstream::binary);
@@ -127,6 +125,9 @@ public:
 	bool inv_mu;
 	bool inv_rho;
 
+	size_t trace_type;
+	size_t model_type;
+
 	Dim dim;
 	size_t nt;
 	size_t nsrc;
@@ -159,7 +160,7 @@ public:
 		wfe = config->i["wfe"];
 		sh = (bool) config->i["sh"];
 		psv = (bool) config->i["psv"];
-		
+
 		trace_type = config->i["trace_type"];
 		model_type = config->i["model_type"];
 

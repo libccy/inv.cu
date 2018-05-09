@@ -50,7 +50,7 @@ public:
 		return misfit;
 	};
 	void importTraces(size_t isrc, string &path) {
-		size_t &nrec = solver->nrec, &nt = solver->nt;
+		size_t &nrec = solver->nrec, &nt = solver->nt, &trace_type = solver->trace_type;
 
 	    int header1[28];
 	    short int header2[2];
@@ -63,7 +63,7 @@ public:
 			for (size_t i = istr.size(); i < 6; i++) {
 				istr = "0" + istr;
 			}
-			return path + "/traces/u" + comp + "_" + istr + ".su";
+			return path + "/traces/" + (trace_type?"u":"v") + comp + "_" + istr + ".su";
 		};
 		auto read = [&](string comp, float *data) {
 			std::ifstream infile(filename(comp), std::ifstream::binary);
@@ -104,23 +104,51 @@ public:
 		obs_z = device::create2D(nsrc, dim);
 
 		if (config->i["trace_file"]) {
-			for (size_t isrc = 0; isrc < nsrc; isrc++) {
-				this->importTraces(isrc, config->path);
+			for (size_t is = 0; is < nsrc; is++) {
+				this->importTraces(is, config->path);
 			}
 		}
 		else {
 			std::cout << "Generating traces" << std::endl;
 			solver->importModel(true);
-			for (size_t isrc = 0; isrc < nsrc; isrc++) {
-				solver->runForward(isrc, true, true);
+			for (size_t is = 0; is < nsrc; is++) {
+				solver->runForward(is, true, true);
 				if (solver->sh) {
-					device::copy(obs_y[isrc], solver->out_y, dim);
+					device::copy(obs_y[is], solver->out_y, dim);
 				}
 				if (solver->psv) {
-					device::copy(obs_x[isrc], solver->out_x, dim);
-					device::copy(obs_z[isrc], solver->out_z, dim);
+					device::copy(obs_x[is], solver->out_x, dim);
+					device::copy(obs_z[is], solver->out_z, dim);
 				}
 			}
+		}
+		if (solver->trace_type == 0) {
+			float &dt = solver->dt;
+			float *buffer = host::create(nt);
+			auto v2u = [&](float *trace) {
+				device::toHost(buffer, trace, nt);
+				buffer[0] *= dt;
+				for (size_t it = 1; it < nt; it++) {
+					buffer[it] = buffer[it - 1] + buffer[it] * dt;
+				}
+				host::toDevice(trace, buffer, nt);
+			};
+			for (size_t is = 0; is < nsrc; is++) {
+				for (size_t ir = 0; ir < nrec; ir++) {
+					if (solver->sh) {
+						v2u(obs_y[is] + ir * nt);
+					}
+					if (solver->psv) {
+						v2u(obs_x[is] + ir * nt);
+						v2u(obs_z[is] + ir * nt);
+					}
+				}
+			}
+			free(buffer);
+			std::cout << device::norm(obs_y[0], nrec*nt) << std::endl;
+		}
+		else {
+			std::cout << device::norm(obs_y[0], nrec*nt) << std::endl;
 		}
 
         solver->importModel(false);
