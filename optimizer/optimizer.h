@@ -2,8 +2,8 @@
 
 namespace _Optimizer {
     __global__ void reduceSystem(const double * __restrict d_in1, double * __restrict d_out1, const double * __restrict d_in2, double * __restrict d_out2, const int M, const int N) {
-        const int i = blockIdx.x;
-        const int j = threadIdx.x;
+        int i = blockIdx.x;
+        int j = threadIdx.x;
 
         if ((i < N) && (j < N)){
             d_out1[j * N + i] = d_in1[j * M + i];

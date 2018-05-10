@@ -27,7 +27,7 @@ namespace _EnvelopeMisfit {
 	    }
 	}
 	__global__ void copyR2C(cufftComplex *a,float *b){
-	    size_t i=blockIdx.x;
+	    size_t i = blockIdx.x;
 	    a[i].x = b[i];
 	    a[i].y = 0;
 	}

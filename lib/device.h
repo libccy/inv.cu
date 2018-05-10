@@ -1,5 +1,9 @@
 #pragma once
 
+namespace device {
+	size_t nthread = 0;
+}
+
 class Dim {
 public:
 	int nx;
@@ -13,15 +17,35 @@ public:
 	void init(int nx, int nz) {
 		this->nx = nx;
 		this->nz = nz;
-		dg = nx;
-		db = nz;
+		if (device::nthread && nx > 1 && nz > 1) {
+			db = device::nthread;
+			dg = std::ceil((float)(nx * nz) / db);
+		}
+		else {
+			dg = nx;
+			db = nz;
+		}
 	};
 	__device__ int k(int i, int j) {
 		return i * nz + j;
 	};
 	__device__ void operator()(int &i, int &j, int &k, int di = 0, int dj = 0) {
-		i = blockIdx.x + di;
-		j = threadIdx.x + dj;
+		// from here: to macro
+		if (nz == db) {
+			i = blockIdx.x + di;
+			j = threadIdx.x + dj;
+		}
+		else {
+			k = blockIdx.x * db + threadIdx.x;
+			j = k % nz;
+			i = (k - j) / nz;
+			if (i >= nx) {
+				k = -1;
+				return;
+			}
+			i += di;
+			j += dj;
+		}
 		k = this->k(i, j);
 	};
 	__device__ int operator()(int di = 0, int dj = 0) {
@@ -68,9 +92,7 @@ namespace host {
 
 namespace device {
 	__constant__ float pi = 3.1415927;
-
 	cublasHandle_t cublas_handle = NULL;
-	// size_t max_thread = 1024;
 
 	template<typename T = float>
 	T *create(size_t len) {

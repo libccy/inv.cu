@@ -91,5 +91,8 @@ public:
 		loadSource();
 		loadStation();
 		createDirectory(path + "/output");
+		if (this->i["nthread"]) {
+			device::nthread = this->i["nthread"];
+		}
 	};
 };

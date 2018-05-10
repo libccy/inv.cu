@@ -6,9 +6,11 @@ namespace _FdmSolver {
 			float *device_x, float *device_z,
 			float *device_vp, float *device_vs, float *device_rho, size_t npt,
 			float dmax, float dx, float dz, Dim dim) {
-		int k = dim(); if (k < 0) return;
-		float x = blockIdx.x * dx;
-		float z = threadIdx.x * dz;
+		int i, j, k;
+		dim(i, j, k);
+		if (k < 0) return;
+		float x = i * dx;
+		float z = j * dz;
 		float dmin = dmax;
 		for (size_t k = 0; k < npt; k++) {
 			float dx = x - device_x[k];
@@ -478,9 +480,9 @@ public:
 			float *mu1 = device::copy(mu, dim);
 			float *rho1 = device::copy(rho, dim);
 			lm2vps<<<dim.dg, dim.db>>>(lambda1, mu1, rho1, dim);
-			if(inv_lambda) exportData("vp", host::create(dim, lambda1), n);
-			if(inv_mu) exportData("vs", host::create(dim, mu1), n);
-			if(inv_rho) exportData("rho", host::create(dim, rho1), n);
+			if (inv_lambda && inv_mu) exportData("vp", host::create(dim, lambda1), n);
+			if (inv_mu) exportData("vs", host::create(dim, mu1), n);
+			if (inv_rho) exportData("rho", host::create(dim, rho1), n);
 			cudaFree(lambda1);
 			cudaFree(mu1);
 			cudaFree(rho1);
@@ -500,7 +502,7 @@ public:
 
 		for (size_t i = 0; i < dim.nx; i++) {
 			for (size_t j = 0; j < dim.nz; j++) {
-				size_t k = dim.hk(i, j);
+				int k = dim.hk(i, j);
 				x[k] = i * dx;
 				z[k] = j * dz;
 			}
