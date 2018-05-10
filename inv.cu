@@ -58,7 +58,7 @@ int main(int argc, const char *argv[]){
 			Misfit *misfit = module::misfit(config->i["misfit"]);
 
 			misfit->init(config, solver, filter);
-			misfit->run(true);
+			misfit->run(true, true);
 			solver->exportAxis();
 			solver->exportKernel();
 			checkMemoryUsage(free_memory);

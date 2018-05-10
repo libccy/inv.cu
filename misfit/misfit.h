@@ -12,7 +12,7 @@ protected:
 
 public:
 	float ref;
-	float run(bool kernel = false) {
+	float run(bool kernel = false, bool snapshot = false) {
 		float misfit = 0;
 		size_t &nsrc = solver->nsrc, &nrec = solver->nrec, &nt = solver->nt;
 		Dim dim(nt, nrec);
@@ -39,7 +39,7 @@ public:
 				}
 			}
 			if (kernel) {
-				solver->runAdjoint(isrc);
+				solver->runAdjoint(isrc, snapshot);
 			}
 		}
 		if (kernel && filter) {

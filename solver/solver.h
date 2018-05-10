@@ -10,6 +10,7 @@ protected:
 
 	size_t sfe;
 	size_t wfe;
+	size_t wae;
 
 	size_t abs_width;
 	float abs_alpha;
@@ -159,6 +160,7 @@ public:
 		nt = config->i["nt"];
 		sfe = config->i["sfe"];
 		wfe = config->i["wfe"];
+		wae = config->i["wae"];
 		sh = (bool) config->i["sh"];
 		psv = (bool) config->i["psv"];
 		adj = (bool) (config->i["mode"] == 0 || config->i["mode"] == 2);

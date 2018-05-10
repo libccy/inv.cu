@@ -321,26 +321,36 @@ private:
 			device::init(sxz, 0.0f, dim);
 		}
 	};
-	void exportSnapshot(size_t it) {
-		if (wfe && (it + 1) % wfe == 0) {
+	void exportSnapshot(size_t it, int isrc = -1) {
+		string istr = "";
+		size_t we = wfe;
+		if (isrc >= 0) {
+			istr = std::to_string(isrc);
+			size_t digit = std::to_string(nsrc).size();
+			for (size_t i = istr.size(); i < digit; i++) {
+				istr = "0" + istr;
+			}
+			we = wae;
+		}
+		if (we && (it + 1) % we == 0) {
 			switch (trace_type) {
 				case 0: {
 					if (sh) {
-						exportData("vy", host::create(dim, vy), it + 1);
+						exportData("vy" + istr, host::create(dim, vy), it + 1);
 					}
 					if (psv) {
-						exportData("vx", host::create(dim, vx), it + 1);
-						exportData("vz", host::create(dim, vz), it + 1);
+						exportData("vx" + istr, host::create(dim, vx), it + 1);
+						exportData("vz" + istr, host::create(dim, vz), it + 1);
 					}
 					break;
 				}
 				case 1: {
 					if (sh) {
-						exportData("uy", host::create(dim, uy), it + 1);
+						exportData("uy" + istr, host::create(dim, uy), it + 1);
 					}
 					if (psv) {
-						exportData("ux", host::create(dim, ux), it + 1);
-						exportData("uz", host::create(dim, uz), it + 1);
+						exportData("ux" + istr, host::create(dim, ux), it + 1);
+						exportData("uz" + istr, host::create(dim, uz), it + 1);
 					}
 					break;
 				}
@@ -605,7 +615,7 @@ public:
 			}
 
 			if (snapshot) {
-				exportSnapshot(it);
+				exportSnapshot(it, isrc);
 			}
 		}
 	};
