@@ -18,7 +18,7 @@ public:
 	        i = blockIdx.x;
 	        j = threadIdx.x;
 	    }
-	    else if (k >= 0) {
+	    else {
 	        j = k % nz;
 	        i = (k - j) / nz;
 	    }
@@ -43,7 +43,7 @@ public:
 		this->size = nx * nz;
 		if (device::nthread && nx > 1 && nz > 1) {
 			db = device::nthread;
-			dg = std::ceil((float)(this->size) / db);
+			dg = std::ceil((float)size / db);
 		}
 		else {
 			dg = nx;
