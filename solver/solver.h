@@ -260,7 +260,5 @@ public:
 	};
 	virtual void runForward(int, bool = false, bool = false, bool = false) = 0;
 	virtual void runAdjoint(int, bool = false) = 0;
-	virtual ~Solver() {
-		std::cout << "deleted" << std::endl;
-	};
+	virtual ~Solver() {};
 };

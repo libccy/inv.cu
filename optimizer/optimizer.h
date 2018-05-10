@@ -410,7 +410,7 @@ protected:
                     return status;
                 }
                 else{
-                    printf("  restarting line search...\n");
+                    std::cout << "  restarting line search..." << std::endl;
                     restartSearch();
                     return lineSearch(f);
                 }
@@ -454,15 +454,16 @@ public:
         }
 
         float time_elapsed = (float)(clock() - time_start) / CLOCKS_PER_SEC;
+        std::cout << "\nFinal misfit: " << misfit->run(false) / misfit->ref << std::endl;
+        std::cout << "Elapsed time: ";
         if(time_elapsed > 60){
             size_t t_min = time_elapsed / 60;
             size_t t_sec = time_elapsed - t_min * 60;
-            std::cout << "\nElapsed time: " << t_min << "min " << t_sec << "s" << std::endl;
+            std::cout << t_min << "min " << t_sec << "s" << std::endl;
         }
         else{
-            std::cout << "\nElapsed time: " << std::round(time_elapsed) << std::endl;
+            std::cout << std::round(time_elapsed) << std::endl;
         }
-        std::cout << "Final misfit: " << misfit->run(false) / misfit->ref << std::endl;
     };
     virtual void init(Config *config, Solver *solver, Misfit *misfit) {
         enum Parameter { lambda = 0, mu = 1, rho = 2 };

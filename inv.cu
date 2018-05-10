@@ -4,6 +4,7 @@ using std::string;
 using std::map;
 
 int main(int argc, const char *argv[]){
+	size_t free_memory = getMemoryUsage();
 	cublasCreate(&device::cublas_handle);
 
 	map<string, string> cfg;
@@ -39,6 +40,7 @@ int main(int argc, const char *argv[]){
 			misfit->init(config, solver, filter);
 			optimizer->init(config, solver, misfit);
 			optimizer->run();
+			checkMemoryUsage(free_memory);
 			break;
 		}
 		case 1: {
@@ -47,6 +49,7 @@ int main(int argc, const char *argv[]){
 			solver->importModel(true);
 			solver->exportAxis();
 			solver->runForward(-1, false, true, true);
+			checkMemoryUsage(free_memory);
 			break;
 		}
 		case 2: {
@@ -58,6 +61,11 @@ int main(int argc, const char *argv[]){
 			misfit->run(true);
 			solver->exportAxis();
 			solver->exportKernel();
+			checkMemoryUsage(free_memory);
+			break;
+		}
+		case 3: {
+			deviceQuery();
 			break;
 		}
 	}

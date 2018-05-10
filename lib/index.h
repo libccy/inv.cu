@@ -13,6 +13,7 @@
 #include <cusolverDn.h>
 
 #include "mkdir.h"
+#include "query.h"
 #include "device.h"
 #include "config.h"
 #include "../source/source.h"
