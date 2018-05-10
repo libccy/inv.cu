@@ -107,12 +107,36 @@ public:
 			for (size_t is = 0; is < nsrc; is++) {
 				this->importTraces(is, config->path);
 			}
+			if (solver->trace_type == 0) {
+				float &dt = solver->dt;
+				float *buffer = host::create(nt);
+				auto v2u = [&](float *trace) {
+					device::toHost(buffer, trace, nt);
+					buffer[0] *= dt;
+					for (size_t it = 1; it < nt; it++) {
+						buffer[it] = buffer[it - 1] + buffer[it] * dt;
+					}
+					host::toDevice(trace, buffer, nt);
+				};
+				for (size_t is = 0; is < nsrc; is++) {
+					for (size_t ir = 0; ir < nrec; ir++) {
+						if (solver->sh) {
+							v2u(obs_y[is] + ir * nt);
+						}
+						if (solver->psv) {
+							v2u(obs_x[is] + ir * nt);
+							v2u(obs_z[is] + ir * nt);
+						}
+					}
+				}
+				free(buffer);
+			}
 		}
 		else {
 			std::cout << "Generating traces" << std::endl;
 			solver->importModel(true);
 			for (size_t is = 0; is < nsrc; is++) {
-				solver->runForward(is, true, true);
+				solver->runForward(is, true);
 				if (solver->sh) {
 					device::copy(obs_y[is], solver->out_y, dim);
 				}
@@ -121,30 +145,6 @@ public:
 					device::copy(obs_z[is], solver->out_z, dim);
 				}
 			}
-		}
-		if (solver->trace_type == 0) {
-			float &dt = solver->dt;
-			float *buffer = host::create(nt);
-			auto v2u = [&](float *trace) {
-				device::toHost(buffer, trace, nt);
-				buffer[0] *= dt;
-				for (size_t it = 1; it < nt; it++) {
-					buffer[it] = buffer[it - 1] + buffer[it] * dt;
-				}
-				host::toDevice(trace, buffer, nt);
-			};
-			for (size_t is = 0; is < nsrc; is++) {
-				for (size_t ir = 0; ir < nrec; ir++) {
-					if (solver->sh) {
-						v2u(obs_y[is] + ir * nt);
-					}
-					if (solver->psv) {
-						v2u(obs_x[is] + ir * nt);
-						v2u(obs_z[is] + ir * nt);
-					}
-				}
-			}
-			free(buffer);
 		}
 
         solver->importModel(false);

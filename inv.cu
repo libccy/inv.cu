@@ -65,6 +65,15 @@ int main(int argc, const char *argv[]){
 			break;
 		}
 		case 3: {
+			Solver *solver = module::solver(config->i["solver"]);
+			solver->init(config);
+			solver->importModel(true);
+			for (size_t is = 0; is < solver->nsrc; is++) {
+				solver->runForward(is, false, true);
+			}
+			break;
+		}
+		case 4: {
 			deviceQuery();
 			break;
 		}

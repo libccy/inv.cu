@@ -536,7 +536,7 @@ public:
 				src_x_id, src_z_id, isrc, sh, psv, it, nt, dim
 			);
 			divV(dim);
-			if ((adjoint && !trace) || trace_type == 1) {
+			if (adjoint || trace_type == 1) {
 				saveRec<<<nrec, 1>>>(
 					out_x, out_y, out_z, ux, uy, uz,
 					rec_x_id, rec_z_id, sh, psv, it, nt, dim
