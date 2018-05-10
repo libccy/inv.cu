@@ -27,7 +27,7 @@ public:
 	        device::init(solver->adstf_z, 0.0f, dim);
 	    }
 		for (size_t isrc = 0; isrc < nsrc; isrc++) {
-			solver->runForward(isrc, true);
+			solver->runForward(isrc);
 			for (size_t irec = 0; irec < nrec; irec++) {
 				size_t irt = irec * nt;
 				if (solver->sh) {
@@ -136,7 +136,7 @@ public:
 			std::cout << "Generating traces" << std::endl;
 			solver->importModel(true);
 			for (size_t is = 0; is < nsrc; is++) {
-				solver->runForward(is, true);
+				solver->runForward(is);
 				if (solver->sh) {
 					device::copy(obs_y[is], solver->out_y, dim);
 				}

@@ -48,7 +48,7 @@ int main(int argc, const char *argv[]){
 			solver->init(config);
 			solver->importModel(true);
 			solver->exportAxis();
-			solver->runForward(-1, false, true, true);
+			solver->runForward(-1, true, true);
 			checkMemoryUsage(free_memory);
 			break;
 		}
@@ -69,7 +69,7 @@ int main(int argc, const char *argv[]){
 			solver->init(config);
 			solver->importModel(true);
 			for (size_t is = 0; is < solver->nsrc; is++) {
-				solver->runForward(is, false, true);
+				solver->runForward(is, true);
 			}
 			break;
 		}

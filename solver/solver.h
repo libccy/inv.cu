@@ -124,6 +124,7 @@ public:
 	bool inv_lambda;
 	bool inv_mu;
 	bool inv_rho;
+	bool adj;
 
 	size_t trace_type;
 	size_t model_type;
@@ -160,6 +161,7 @@ public:
 		wfe = config->i["wfe"];
 		sh = (bool) config->i["sh"];
 		psv = (bool) config->i["psv"];
+		adj = (bool) (config->i["mode"] == 0 || config->i["mode"] == 2);
 
 		trace_type = config->i["trace_type"];
 		model_type = config->i["model_type"];
@@ -200,7 +202,7 @@ public:
 			host::toDevice(rec_z + ir, config->rec[ir] + 1, 1);
 		}
 
-		if (config->i["mode"] != 1) {
+		if (adj) {
 	        inv_lambda = (bool) config->i["inv_lambda"];
 	        inv_mu = (bool) config->i["inv_mu"];
 	        inv_rho = (bool) config->i["inv_rho"];
@@ -258,7 +260,7 @@ public:
 		if(inv_mu) exportData("mu", host::create(dim, mu), n);
 		if(inv_rho) exportData("rho", host::create(dim, rho), n);
 	};
-	virtual void runForward(int, bool = false, bool = false, bool = false) = 0;
+	virtual void runForward(int, bool = false, bool = false) = 0;
 	virtual void runAdjoint(int, bool = false) = 0;
 	virtual ~Solver() {};
 };

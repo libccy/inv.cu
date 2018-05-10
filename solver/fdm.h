@@ -420,7 +420,7 @@ public:
 			dvzdz = device::create(dim);
 		}
 
-		if(config->i["mode"] != 1){
+		if(adj){
             if(sh){
                 dvydx_fw = device::create(dim);
                 dvydz_fw = device::create(dim);
@@ -511,14 +511,14 @@ public:
 		exportData("x", x);
 		exportData("z", z);
 	};
-	void runForward(int isrc, bool adjoint = false, bool trace = false, bool snapshot = false) {
+	void runForward(int isrc, bool trace = false, bool snapshot = false) {
 		using namespace _FdmSolver;
 
 		initWavefields();
 
 		for (size_t it = 0; it < nt; it++) {
 			int isfe = -1;
-			if (sfe && adjoint && (it + 1) % sfe == 0) {
+			if (sfe && adj && (it + 1) % sfe == 0) {
 				isfe = nsfe - (it + 1) / sfe;
 			}
 			if (isfe >= 0) {
@@ -536,7 +536,7 @@ public:
 				src_x_id, src_z_id, isrc, sh, psv, it, nt, dim
 			);
 			divV(dim);
-			if (adjoint || trace_type == 1) {
+			if (adj || trace_type == 1) {
 				saveRec<<<nrec, 1>>>(
 					out_x, out_y, out_z, ux, uy, uz,
 					rec_x_id, rec_z_id, sh, psv, it, nt, dim
