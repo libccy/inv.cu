@@ -23,6 +23,19 @@ def read_fortran(filename):
 	return v[:-1]
 
 
+def write_fortran(filename, data):
+    """ Reads Fortran style binary data and returns a numpy array.
+    """
+    with open(filename, 'wb') as f:
+        # write size of record
+        f.seek(0)
+        np.array([len(data)], dtype='int32').tofile(f)
+
+		# write contents of record
+        f.seek(4)
+        data.tofile(f)
+
+
 def mesh2grid(v, x, z):
 	""" Interpolates from an unstructured coordinates (mesh) to a structured
 		coordinates (grid)
@@ -62,17 +75,12 @@ def _stack(*args):
 
 
 if __name__ == '__main__':
-	""" Plots data on 2-D unstructured mesh
+	""" Interpolates mesh files for finite-difference calculation
 	  Modified from a script for specfem2d:
 	  http://tigress-web.princeton.edu/~rmodrak/visualize/plot2d
 
-	  Can be used to plot models or kernels created by inv.cu
-
 	  SYNTAX
-		  plot_model.py  folder_name  component_name||file_name  (time_step)
-		  e.g. ./plot_model.py output vx 1000
-		       ./plot_model.py output proc001000_vx.bin
-		       ./plot_model.py example/model/checker vs
+		  ./interpolate.py  input_dir outpu_dir
 	"""
 
 	istr = ''
@@ -120,14 +128,30 @@ if __name__ == '__main__':
 	# interpolate to uniform rectangular grid
 	V, X, Z = mesh2grid(v, x, z)
 
-	# display figure
-	pylab.pcolor(X, Z, V)
-	locs = np.arange(X.min(), X.max() + 1, (X.max() - X.min()) / 5)
-	pylab.xticks(locs, map(lambda x: "%g" % x, locs / 1e3))
-	locs = np.arange(Z.min(), Z.max() + 1, (Z.max() - Z.min()) / 5)
-	pylab.yticks(locs, map(lambda x: "%g" % x, locs / 1e3))
-	pylab.colorbar()
-	pylab.xlabel('x / km')
-	pylab.ylabel('z / km')
-	pylab.gca().invert_yaxis()
-	pylab.show()
+	# export data
+	nx = len(X)
+    nz = len(Z)
+    npt = nx * nz
+    ox=np.zeros(npt, dtype='float32')
+    oz=np.zeros(npt, dtype='float32')
+    ov=np.zeros(npt, dtype='float32')
+
+    for i in range(nx):
+        for j in range(nz):
+            ipt = i * nz + j
+            ox[ipt] = X[i]
+            oz[ipt] = Z[j]
+            ov[ipt] = V[j][i]
+
+    write_fortran('t/proc000000_x.bin', ox)
+    write_fortran('t/proc000000_z.bin', oz)
+    write_fortran('t/proc000000_v.bin', ov)
+
+    print(len(x))
+    print(len(z))
+    print(len(v))
+
+    print(len(X))
+    print(len(Z))
+    print(len(V), len(V[0]))
+    print(Z)

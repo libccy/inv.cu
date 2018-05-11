@@ -30,7 +30,7 @@ if __name__ == '__main__':
 	""" Plots su(Seismic Unix) data
 
 	  SYNTAX
-		  plot_trace  folder_name  component_name||file_name  (source id)
+		  plot_trace.py  folder_name  component_name||file_name  (source id)
 		  e.g. ./plot_trace.py output vx
 		       ./plot_trace.py output vx 0
 		       ./plot_trace.py output vx_000000.su
