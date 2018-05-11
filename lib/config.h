@@ -6,7 +6,7 @@ using std::vector;
 
 class Config {
 private:
-	void parseConfig(string &data) {
+	void parseConfig(map<string, string> &cfg, string &data) {
 		size_t pos = data.find_first_not_of(" \t");
 		if (pos != string::npos) {
 			data = data.substr(pos);
@@ -37,7 +37,7 @@ private:
 		std::ifstream infile(path + "/config.ini");
 		string data;
 		while (getline(infile, data)) {
-			parseConfig(data);
+			parseConfig(cfg, data);
 		}
 		infile.close();
 	};
@@ -92,6 +92,9 @@ public:
 		loadConfig(cfg);
 		loadSource();
 		loadStation();
+		if (i["clean"]) {
+			removeDirectory(path + "/output");
+		}
 		createDirectory(path + "/output");
 		if (this->i["nthread"]) {
 			device::nthread = this->i["nthread"];
