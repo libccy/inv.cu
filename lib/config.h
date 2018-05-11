@@ -19,6 +19,15 @@ private:
 			keystream >> key;
 			valuestream >> value;
 			if (key.size() && value.size() && key[0] != '#') {
+				if (key == "inherit") {
+					std::ifstream infile(value);
+					string data;
+					while (getline(infile, data)) {
+						parseConfig(cfg, data);
+					}
+					infile.close();
+					return;
+				}
 				if (cfg[key].size()) {
 					value = cfg[key];
 				}
@@ -32,8 +41,7 @@ private:
 			}
 		}
 	};
-	void loadConfig(map<string, string> &cfg) {
-		path = cfg["config"];
+	void loadConfig(string &path, map<string, string> &cfg) {
 		std::ifstream infile(path + "/config.ini");
 		string data;
 		while (getline(infile, data)) {
@@ -89,7 +97,8 @@ public:
 	map<string, int> i;
 	string path;
 	Config(map<string, string> &cfg) {
-		loadConfig(cfg);
+		path = cfg["config"];
+		loadConfig(path, cfg);
 		loadSource();
 		loadStation();
 		if (i["clean"]) {
