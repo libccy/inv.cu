@@ -6,46 +6,39 @@ using std::vector;
 
 class Config {
 private:
-	void parseConfig(map<string, string> &cfg, string &data) {
-		size_t pos = data.find_first_not_of(" \t");
-		if (pos != string::npos) {
-			data = data.substr(pos);
-		}
-		pos = data.find("=");
-		if (pos != string::npos) {
-			std::istringstream keystream(data.substr(0, pos));
-			std::istringstream valuestream(data.substr(pos + 1));
-			string key, value;
-			keystream >> key;
-			valuestream >> value;
-			if (key.size() && value.size() && key[0] != '#') {
-				if (key == "inherit") {
-					std::ifstream infile(value);
-					string data;
-					while (getline(infile, data)) {
-						parseConfig(cfg, data);
-					}
-					infile.close();
-					return;
-				}
-				if (cfg[key].size()) {
-					value = cfg[key];
-				}
-				std::istringstream f_valuestream(value);
+	void parseConfig(map<string, string> &cfg) {
+		for (auto const& x : cfg) {
+			if (x.first != "config" && x.first != "inherit") {
+				std::istringstream f_valuestream(x.second);
 				float f_value;
 				f_valuestream >> f_value;
 				if (f_valuestream.eof() && !f_valuestream.fail()) {
-					f[key] = f_value;
-					i[key] = std::round(f_value);
+					f[x.first] = f_value;
+					i[x.first] = std::round(f_value);
 				}
 			}
 		}
 	};
-	void loadConfig(string &path, map<string, string> &cfg) {
-		std::ifstream infile(path + "/config.ini");
+	void loadConfig(string cfgpath, map<string, string> &cfg) {
+		std::ifstream infile(cfgpath);
+		size_t pos;
 		string data;
 		while (getline(infile, data)) {
-			parseConfig(cfg, data);
+			pos = data.find_first_not_of(" \t");
+			if (pos != string::npos) {
+				data = data.substr(pos);
+			}
+			pos = data.find("=");
+			if (pos != string::npos) {
+				std::istringstream keystream(data.substr(0, pos));
+				std::istringstream valuestream(data.substr(pos + 1));
+				string key, value;
+				keystream >> key;
+				valuestream >> value;
+				if (key.size() && value.size() && key[0] != '#' && !cfg[key].size()) {
+					cfg[key] = value;
+				}
+			}
 		}
 		infile.close();
 	};
@@ -98,7 +91,11 @@ public:
 	string path;
 	Config(map<string, string> &cfg) {
 		path = cfg["config"];
-		loadConfig(path, cfg);
+		loadConfig(path + "/config.ini", cfg);
+		if (cfg["inherit"].size()) {
+			loadConfig(cfg["inherit"], cfg);
+		}
+		parseConfig(cfg);
 		loadSource();
 		loadStation();
 		if (i["clean"]) {
