@@ -12,15 +12,15 @@ namespace _FdmSolver {
 		float x = i * dx;
 		float z = j * dz;
 		float dmin = dmax;
-		for (size_t k = 0; k < npt; k++) {
-			float dx = x - device_x[k];
-			float dz = z - device_z[k];
+		for (size_t l = 0; l < npt; l++) {
+			float dx = x - device_x[l];
+			float dz = z - device_z[l];
 			float d = dx * dx + dz * dz;
 			if (d < dmin) {
 				dmin = d;
-				lambda[k] = device_vp[k];
-				mu[k] = device_vs[k];
-				rho[k] = device_rho[k];
+				lambda[k] = device_vp[l];
+				mu[k] = device_vs[l];
+				rho[k] = device_rho[l];
 			}
 		}
 	}
