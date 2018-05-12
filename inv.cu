@@ -50,12 +50,6 @@ int main(int argc, const char *argv[]){
 			solver->exportAxis();
 			solver->runForward(-1, true, true);
 			checkMemoryUsage(free_memory);
-			std::cout <<solver->dim.nx << std::endl;
-			std::cout <<solver->dim.nz << std::endl;
-			std::cout <<solver->dx << std::endl;
-			std::cout <<solver->dz << std::endl;
-			std::cout <<solver->dim.nx*solver->dx << std::endl;
-			std::cout <<solver->dim.nz*solver->dz << std::endl;
 			break;
 		}
 		case 2: {
