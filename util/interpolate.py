@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import sys
+import os
+from os import makedirs
 from os.path import exists
 
 import numpy as np
@@ -67,6 +69,45 @@ def mesh2grid(v, x, z):
 
 	return np.reshape(V, (int(nz), int(nx))), x, z
 
+def interpolate_data(x, z, par, write_axis):
+	database_file = '%s/proc000000_%s.bin' % (sys.argv[1], par)
+	if exists(database_file):
+		try:
+			v = read_fortran(database_file)
+		except:
+			raise Exception('Error reading database file: %s' % database_file)
+
+		# check mesh dimensions
+		assert x.shape == z.shape == v.shape, 'Inconsistent mesh dimensions.'
+
+		# interpolate to uniform rectangular grid
+		V, X, Z = mesh2grid(v, x, z)
+
+		nx = len(X)
+		nz = len(Z)
+		npt = nx * nz
+
+		if write_axis:
+			print('nx = %d nz = %d' % (nx, nz))
+			ox = np.zeros(npt, dtype='float32')
+			oz = np.zeros(npt, dtype='float32')
+			for i in range(nx):
+				for j in range(nz):
+					ipt = i * nz + j
+					ox[ipt] = X[i]
+					oz[ipt] = Z[nz - j - 1] # flip z axis
+
+			write_fortran('%s/proc000000_x.bin' % sys.argv[2], ox)
+			write_fortran('%s/proc000000_z.bin' % sys.argv[2], oz)
+
+		# export data
+		ov= np.zeros(npt, dtype='float32')
+		for i in range(nx):
+			for j in range(nz):
+				ipt = i * nz + j
+				ov[ipt] = V[j][i]
+
+		write_fortran('%s/proc000000_%s.bin' % (sys.argv[2], par), ov)
 
 
 def _stack(*args):
@@ -80,16 +121,10 @@ if __name__ == '__main__':
 	  http://tigress-web.princeton.edu/~rmodrak/visualize/plot2d
 
 	  SYNTAX
-		  ./interpolate.py  input_dir outpu_dir
+		  ./interpolate.py  input_dir output_dir
 	"""
-
-	istr = ''
-	if len(sys.argv) > 3:
-		istr = str(sys.argv[3])
-		while len(istr) < 6:
-			istr = '0' + istr
-	else:
-		istr = '000000'
+	if not exists(sys.argv[2]):
+		makedirs(sys.argv[2])
 
 	# parse command line arguments
 	x_coords_file = '%s/proc000000_x.bin' % sys.argv[1]
@@ -99,59 +134,9 @@ if __name__ == '__main__':
 	assert exists(x_coords_file)
 	assert exists(z_coords_file)
 
-	database_file = "%s/%s" % (sys.argv[1], sys.argv[2])
-	if not exists(database_file):
-		database_file = "%s/%s.bin" % (sys.argv[1], sys.argv[2])
-	if not exists(database_file):
-		database_file = "%s/proc%s_%s.bin" % (sys.argv[1], istr, sys.argv[2])
+	x = read_fortran(x_coords_file)
+	z = read_fortran(z_coords_file)
 
-	assert exists(database_file)
-
-	# read mesh coordinates
-	#try:
-	if True:
-		x = read_fortran(x_coords_file)
-		z = read_fortran(z_coords_file)
-	#except:
-	#    raise Exception('Error reading mesh coordinates.')
-
-	# read database file
-	try:
-		v = read_fortran(database_file)
-	except:
-		raise Exception('Error reading database file: %s' % database_file)
-
-	# check mesh dimensions
-	assert x.shape == z.shape == v.shape, 'Inconsistent mesh dimensions.'
-
-
-	# interpolate to uniform rectangular grid
-	V, X, Z = mesh2grid(v, x, z)
-
-	# export data
-	nx = len(X)
-    nz = len(Z)
-    npt = nx * nz
-    ox=np.zeros(npt, dtype='float32')
-    oz=np.zeros(npt, dtype='float32')
-    ov=np.zeros(npt, dtype='float32')
-
-    for i in range(nx):
-        for j in range(nz):
-            ipt = i * nz + j
-            ox[ipt] = X[i]
-            oz[ipt] = Z[j]
-            ov[ipt] = V[j][i]
-
-    write_fortran('t/proc000000_x.bin', ox)
-    write_fortran('t/proc000000_z.bin', oz)
-    write_fortran('t/proc000000_v.bin', ov)
-
-    print(len(x))
-    print(len(z))
-    print(len(v))
-
-    print(len(X))
-    print(len(Z))
-    print(len(V), len(V[0]))
-    print(Z)
+	pars = ['vp', 'vs', 'lambda', 'mu', 'rho']
+	for par in pars:
+		interpolate_data(x, z, par, par == 'vp')
