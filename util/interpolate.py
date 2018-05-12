@@ -95,7 +95,7 @@ def interpolate_data(x, z, par, write_axis):
 				for j in range(nz):
 					ipt = i * nz + j
 					ox[ipt] = X[i]
-					oz[ipt] = Z[nz - j - 1] # flip z axis
+					oz[ipt] = Z[j]
 
 			write_fortran('%s/proc000000_x.bin' % sys.argv[2], ox)
 			write_fortran('%s/proc000000_z.bin' % sys.argv[2], oz)
