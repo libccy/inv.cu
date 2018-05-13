@@ -44,107 +44,107 @@ namespace _FdmSolver {
 		vs[k] = sqrt(mu / rho[k]);
 	}
 	__global__ void calcIdx(size_t *coord_n_id, float *coord_n, float Ln, float n){
-	    size_t i = blockIdx.x;
-	    coord_n_id[i] = (int)(coord_n[i] / Ln * (n - 1) + 0.5);
+		size_t i = blockIdx.x;
+		coord_n_id[i] = (int)(coord_n[i] / Ln * (n - 1) + 0.5);
 	}
 	__global__ void initAbsbound(
 		float *absbound, size_t abs_width, float abs_alpha,
 		bool abs_left, bool abs_right, bool abs_bottom, bool abs_top, Dim dim) {
-	    int i, j, k;
+		int i, j, k;
 		dim(i, j, k);
 		if (k >= dim.size) return;
-	    absbound[k] = 1;
+		absbound[k] = 1;
 
-	    if (abs_left) {
-	        if (i + 1 < abs_width) {
-	            absbound[k] *= exp(-pow(abs_alpha * (abs_width - i - 1), 2));
-	        }
-	    }
-	    if (abs_right) {
-	        if (i > dim.nx - abs_width) {
-	            absbound[k] *= exp(-pow(abs_alpha * (abs_width + i - dim.nx), 2));
-	        }
-	    }
-	    if (abs_bottom) {
+		if (abs_left) {
+			if (i + 1 < abs_width) {
+				absbound[k] *= exp(-pow(abs_alpha * (abs_width - i - 1), 2));
+			}
+		}
+		if (abs_right) {
+			if (i > dim.nx - abs_width) {
+				absbound[k] *= exp(-pow(abs_alpha * (abs_width + i - dim.nx), 2));
+			}
+		}
+		if (abs_bottom) {
 			if (j > dim.nz - abs_width) {
-	            absbound[k] *= exp(-pow(abs_alpha * (abs_width + j - dim.nz), 2));
-	        }
-	    }
-	    if (abs_top) {
+				absbound[k] *= exp(-pow(abs_alpha * (abs_width + j - dim.nz), 2));
+			}
+		}
+		if (abs_top) {
 			if (j + 1 < abs_width) {
 			   absbound[k] *= exp(-pow(abs_alpha * (abs_width - j - 1), 2));
 		   }
-	    }
+		}
 	}
 
 	__global__ void divSY(float *dsy, float *sxy, float *szy, float dx, float dz, Dim dim){
-	    int i, j, k;
+		int i, j, k;
 		dim(i, j, k);
 		if (k >= dim.size) return;
-	    if (i >= 2 && i < dim.nx - 2) {
+		if (i >= 2 && i < dim.nx - 2) {
 			dsy[k] = 9 * (sxy[k] - sxy[dim(-1,0)]) / (8 * dx) - (sxy[dim(1,0)] - sxy[dim(-2,0)]) / (24 * dx);
-	    }
-	    else{
-	        dsy[k] = 0;
-	    }
-	    if (j >= 2 && j < dim.nz - 2) {
-	        dsy[k] += 9 * (szy[k] - szy[dim(0,-1)]) / (8 * dz) - (szy[dim(0,1)] - szy[dim(0,-2)]) / (24 * dz);
-	    }
+		}
+		else{
+			dsy[k] = 0;
+		}
+		if (j >= 2 && j < dim.nz - 2) {
+			dsy[k] += 9 * (szy[k] - szy[dim(0,-1)]) / (8 * dz) - (szy[dim(0,1)] - szy[dim(0,-2)]) / (24 * dz);
+		}
 	}
 	__global__ void divSXZ(float *dsx, float *dsz, float *sxx, float *szz, float *sxz, float dx, float dz, Dim dim){
 		int i, j, k;
 		dim(i, j, k);
 		if (k >= dim.size) return;
-	    if (i >= 2 && i < dim.nx - 2) {
-	        dsx[k] = 9 * (sxx[k] - sxx[dim(-1,0)])/(8 * dx) - (sxx[dim(1,0)] - sxx[dim(-2,0)]) / (24 * dx);
-	        dsz[k] = 9 * (sxz[k] - sxz[dim(-1,0)])/(8 * dx) - (sxz[dim(1,0)] - sxz[dim(-2,0)]) / (24 * dx);
-	    }
-	    else{
-	        dsx[k] = 0;
-	        dsz[k] = 0;
-	    }
-	    if (j >= 2 && j < dim.nz - 2) {
-	        dsx[k] += 9 * (sxz[k] - sxz[dim(0,-1)])/(8 * dz) - (sxz[dim(0,1)] - sxz[dim(0,-2)]) / (24 * dz);
-	        dsz[k] += 9 * (szz[k] - szz[dim(0,-1)])/(8 * dz) - (szz[dim(0,1)] - szz[dim(0,-2)]) / (24 * dz);
-	    }
+		if (i >= 2 && i < dim.nx - 2) {
+			dsx[k] = 9 * (sxx[k] - sxx[dim(-1,0)])/(8 * dx) - (sxx[dim(1,0)] - sxx[dim(-2,0)]) / (24 * dx);
+			dsz[k] = 9 * (sxz[k] - sxz[dim(-1,0)])/(8 * dx) - (sxz[dim(1,0)] - sxz[dim(-2,0)]) / (24 * dx);
+		}
+		else{
+			dsx[k] = 0;
+			dsz[k] = 0;
+		}
+		if (j >= 2 && j < dim.nz - 2) {
+			dsx[k] += 9 * (sxz[k] - sxz[dim(0,-1)])/(8 * dz) - (sxz[dim(0,1)] - sxz[dim(0,-2)]) / (24 * dz);
+			dsz[k] += 9 * (szz[k] - szz[dim(0,-1)])/(8 * dz) - (szz[dim(0,1)] - szz[dim(0,-2)]) / (24 * dz);
+		}
 	}
 	__global__ void divVY(float *dvydx, float *dvydz, float *vy, float dx, float dz, Dim dim){
 		int i, j, k;
 		dim(i, j, k);
 		if (k >= dim.size) return;
-	    if (i >= 1 && i < dim.nx - 2) {
-	        dvydx[k] = 9 * (vy[dim(1,0)] - vy[k]) / (8 * dx) - (vy[dim(2,0)] - vy[dim(-1,0)]) / (24 * dx);
-	    }
-	    else{
-	        dvydx[k] = 0;
-	    }
-	    if (j >= 1 && j < dim.nz - 2) {
-	        dvydz[k] = 9 * (vy[dim(0,1)] - vy[k]) / (8 * dz) - (vy[dim(0,2)] - vy[dim(0,-1)]) / (24 * dz);
-	    }
-	    else{
-	        dvydz[k] = 0;
-	    }
+		if (i >= 1 && i < dim.nx - 2) {
+			dvydx[k] = 9 * (vy[dim(1,0)] - vy[k]) / (8 * dx) - (vy[dim(2,0)] - vy[dim(-1,0)]) / (24 * dx);
+		}
+		else{
+			dvydx[k] = 0;
+		}
+		if (j >= 1 && j < dim.nz - 2) {
+			dvydz[k] = 9 * (vy[dim(0,1)] - vy[k]) / (8 * dz) - (vy[dim(0,2)] - vy[dim(0,-1)]) / (24 * dz);
+		}
+		else{
+			dvydz[k] = 0;
+		}
 	}
 	__global__ void divVXZ(float *dvxdx, float *dvxdz, float *dvzdx, float *dvzdz, float *vx, float *vz, float dx, float dz, Dim dim){
 		int i, j, k;
 		dim(i, j, k);
 		if (k >= dim.size) return;
-	    if (i >= 1 && i < dim.nx - 2) {
-	        dvxdx[k] = 9 * (vx[dim(1,0)] - vx[k]) / (8 * dx) - (vx[dim(2,0)] - vx[dim(-1,0)]) / (24 * dx);
-	        dvzdx[k] = 9 * (vz[dim(1,0)] - vz[k]) / (8 * dx) - (vz[dim(2,0)] - vz[dim(-1,0)]) / (24 * dx);
-	    }
-	    else{
-	        dvxdx[k] = 0;
-	        dvzdx[k] = 0;
-	    }
-	    if (j >= 1 && j < dim.nz - 2) {
-	        dvxdz[k] = 9 * (vx[dim(0,1)] - vx[k]) / (8 * dz) - (vx[dim(0,2)] - vx[dim(0,-1)]) / (24 * dz);
-	        dvzdz[k] = 9 * (vz[dim(0,1)] - vz[k]) / (8 * dz) - (vz[dim(0,2)] - vz[dim(0,-1)]) / (24 * dz);
-	    }
-	    else{
-	        dvxdz[k] = 0;
-	        dvzdz[k] = 0;
-	    }
+		if (i >= 1 && i < dim.nx - 2) {
+			dvxdx[k] = 9 * (vx[dim(1,0)] - vx[k]) / (8 * dx) - (vx[dim(2,0)] - vx[dim(-1,0)]) / (24 * dx);
+			dvzdx[k] = 9 * (vz[dim(1,0)] - vz[k]) / (8 * dx) - (vz[dim(2,0)] - vz[dim(-1,0)]) / (24 * dx);
+		}
+		else{
+			dvxdx[k] = 0;
+			dvzdx[k] = 0;
+		}
+		if (j >= 1 && j < dim.nz - 2) {
+			dvxdz[k] = 9 * (vx[dim(0,1)] - vx[k]) / (8 * dz) - (vx[dim(0,2)] - vx[dim(0,-1)]) / (24 * dz);
+			dvzdz[k] = 9 * (vz[dim(0,1)] - vz[k]) / (8 * dz) - (vz[dim(0,2)] - vz[dim(0,-1)]) / (24 * dz);
+		}
+		else{
+			dvxdz[k] = 0;
+			dvzdz[k] = 0;
+		}
 	}
 
 	__global__ void updateSY(float *sxy, float *szy, float *dvydx, float *dvydz, float *mu, float dt, Dim dim){
@@ -173,61 +173,61 @@ namespace _FdmSolver {
 	}
 
 	__global__ void addSTF(float *dsx, float *dsy, float *dsz, float *stf_x, float *stf_y, float *stf_z,
-	    size_t *src_x_id, size_t *src_z_id, int isrc, bool sh, bool psv, size_t it, size_t nt, Dim dim){
-	    size_t is = blockIdx.x;
-	    size_t xs = src_x_id[is];
-	    size_t zs = src_z_id[is];
+		size_t *src_x_id, size_t *src_z_id, int isrc, bool sh, bool psv, size_t it, size_t nt, Dim dim){
+		size_t is = blockIdx.x;
+		size_t xs = src_x_id[is];
+		size_t zs = src_z_id[is];
 		size_t ks = is * nt + it;
 		size_t km = dim.idx(xs, zs);
 
-	    if (isrc < 0 || isrc == is) {
-	        if (sh) {
-	            dsy[km] += stf_y[ks];
-	        }
-	        if (psv) {
-	            dsx[km] += stf_x[ks];
-	            dsz[km] += stf_z[ks];
-	        }
-	    }
+		if (isrc < 0 || isrc == is) {
+			if (sh) {
+				dsy[km] += stf_y[ks];
+			}
+			if (psv) {
+				dsx[km] += stf_x[ks];
+				dsz[km] += stf_z[ks];
+			}
+		}
 	}
 	__global__ void saveRec(float *out_x, float *out_y, float *out_z, float *wx, float *wy, float *wz,
-	    size_t *rec_x_id, size_t *rec_z_id, bool sh, bool psv, size_t it, size_t nt, Dim dim){
-	    size_t ir = blockIdx.x;
-	    size_t xr = rec_x_id[ir];
-	    size_t zr = rec_z_id[ir];
+		size_t *rec_x_id, size_t *rec_z_id, bool sh, bool psv, size_t it, size_t nt, Dim dim){
+		size_t ir = blockIdx.x;
+		size_t xr = rec_x_id[ir];
+		size_t zr = rec_z_id[ir];
 		size_t kr = ir * nt + it;
 		size_t km = dim.idx(xr, zr);
 
-	    if(sh){
-	        out_y[kr] = wy[km];
-	    }
-	    if(psv){
-	        out_x[kr] = wx[km];
-	        out_z[kr] = wz[km];
-	    }
+		if(sh){
+			out_y[kr] = wy[km];
+		}
+		if(psv){
+			out_x[kr] = wx[km];
+			out_z[kr] = wz[km];
+		}
 	}
 
 	__global__ void interactionRhoY(float *k_rho, float *vy, float *vy_fw, float ndt, Dim dim){
-	    int k = dim(); if (k >= dim.size) return;
-	    k_rho[k] -= vy_fw[k] * vy[k] * ndt;
+		int k = dim(); if (k >= dim.size) return;
+		k_rho[k] -= vy_fw[k] * vy[k] * ndt;
 	}
 	__global__ void interactionRhoXZ(float *k_rho, float *vx, float *vx_fw, float *vz, float *vz_fw, float ndt, Dim dim){
-	    int k = dim(); if (k >= dim.size) return;
-	    k_rho[k] -= (vx_fw[k] * vx[k] + vz_fw[k] * vz[k]) * ndt;
+		int k = dim(); if (k >= dim.size) return;
+		k_rho[k] -= (vx_fw[k] * vx[k] + vz_fw[k] * vz[k]) * ndt;
 	}
 	__global__ void interactionMuY(float *k_mu, float *dvydx, float *dvydx_fw, float *dvydz, float *dvydz_fw, float ndt, Dim dim){
-	    int k = dim(); if (k >= dim.size) return;
-	    k_mu[k] -= (dvydx[k] * dvydx_fw[k] + dvydz[k] * dvydz_fw[k]) * ndt;
+		int k = dim(); if (k >= dim.size) return;
+		k_mu[k] -= (dvydx[k] * dvydx_fw[k] + dvydz[k] * dvydz_fw[k]) * ndt;
 	}
 	__global__ void interactionMuXZ(float *k_mu, float *dvxdx, float *dvxdx_fw, float *dvxdz, float *dvxdz_fw,
-	    float *dvzdx, float *dvzdx_fw, float *dvzdz, float *dvzdz_fw, float ndt, Dim dim){
-	    int k = dim(); if (k >= dim.size) return;
-	    k_mu[k] -= (2 * dvxdx[k] * dvxdx_fw[k] + 2 * dvzdz[k] * dvzdz_fw[k] +
-	        (dvxdz[k] + dvzdx[k]) * (dvzdx_fw[k] + dvxdz_fw[k])) * ndt;
+		float *dvzdx, float *dvzdx_fw, float *dvzdz, float *dvzdz_fw, float ndt, Dim dim){
+		int k = dim(); if (k >= dim.size) return;
+		k_mu[k] -= (2 * dvxdx[k] * dvxdx_fw[k] + 2 * dvzdz[k] * dvzdz_fw[k] +
+			(dvxdz[k] + dvzdx[k]) * (dvzdx_fw[k] + dvxdz_fw[k])) * ndt;
 	}
 	__global__ void interactionLambdaXZ(float *k_lambda, float *dvxdx, float *dvxdx_fw, float *dvzdz, float *dvzdz_fw, float ndt, Dim dim){
-	    int k = dim(); if (k >= dim.size) return;
-	    k_lambda[k] -= ((dvxdx[k] + dvzdz[k]) * (dvxdx_fw[k] + dvzdz_fw[k])) * ndt;
+		int k = dim(); if (k >= dim.size) return;
+		k_lambda[k] -= ((dvxdx[k] + dvzdz[k]) * (dvxdx_fw[k] + dvzdz_fw[k])) * ndt;
 	}
 }
 
@@ -257,14 +257,14 @@ private:
 	float *szy;
 
 	float *dsx;
-    float *dsy;
-    float *dsz;
-    float *dvxdx;
-    float *dvxdz;
-    float *dvydx;
-    float *dvydz;
-    float *dvzdx;
-    float *dvzdz;
+	float *dsy;
+	float *dsz;
+	float *dvxdx;
+	float *dvxdz;
+	float *dvydx;
+	float *dvydz;
+	float *dvzdx;
+	float *dvzdz;
 
 	float *dvydx_fw;
 	float *dvydz_fw;
@@ -431,29 +431,29 @@ public:
 		}
 
 		if(adj){
-            if(sh){
-                dvydx_fw = device::create(dim);
-                dvydz_fw = device::create(dim);
+			if(sh){
+				dvydx_fw = device::create(dim);
+				dvydz_fw = device::create(dim);
 
 				vy_forward = host::create2D(nsfe, dim);
 				uy_forward = host::create2D(nsfe, dim);
-            }
-            if(psv){
-                dvxdx_fw = device::create(dim);
-                dvxdz_fw = device::create(dim);
-                dvzdx_fw = device::create(dim);
-                dvzdz_fw = device::create(dim);
+			}
+			if(psv){
+				dvxdx_fw = device::create(dim);
+				dvxdz_fw = device::create(dim);
+				dvzdx_fw = device::create(dim);
+				dvzdz_fw = device::create(dim);
 
 				vx_forward = host::create2D(nsfe, dim);
 				ux_forward = host::create2D(nsfe, dim);
 				vz_forward = host::create2D(nsfe, dim);
 				uz_forward = host::create2D(nsfe, dim);
-            }
+			}
 
-            k_lambda = device::create(dim);
-            k_mu = device::create(dim);
-            k_rho = device::create(dim);
-        }
+			k_lambda = device::create(dim);
+			k_mu = device::create(dim);
+			k_rho = device::create(dim);
+		}
 
 		src_x_id = device::create<size_t>(nsrc);
 		src_z_id = device::create<size_t>(nsrc);
@@ -461,13 +461,13 @@ public:
 		rec_z_id = device::create<size_t>(nrec);
 
 		calcIdx<<<nsrc, 1>>>(src_x_id, src_x, xmax, nx);
-        calcIdx<<<nsrc, 1>>>(src_z_id, src_z, zmax, nz);
-        calcIdx<<<nrec, 1>>>(rec_x_id, rec_x, xmax, nx);
-        calcIdx<<<nrec, 1>>>(rec_z_id, rec_z, zmax, nz);
+		calcIdx<<<nsrc, 1>>>(src_z_id, src_z, zmax, nz);
+		calcIdx<<<nrec, 1>>>(rec_x_id, rec_x, xmax, nx);
+		calcIdx<<<nrec, 1>>>(rec_z_id, rec_z, zmax, nz);
 
 		initAbsbound<<<dim.dg, dim.db>>>(
 			absbound, abs_width, abs_alpha, abs_left, abs_right, abs_bottom, abs_top, dim
-        );
+		);
 	};
 	void importModel(bool model) {
 		Solver::importModel(model);
@@ -594,23 +594,23 @@ public:
 				float ndt = sfe * dt;
 				if (sh) {
 					host::toDevice(dsy, uy_forward[isfe], dim);
-                    divVY<<<dim.dg, dim.db>>>(dvydx, dvydz, uy, dx, dz, dim);
-                    divVY<<<dim.dg, dim.db>>>(dvydx_fw, dvydz_fw, dsy, dx, dz, dim);
-                    host::toDevice(dsy, vy_forward[isfe], dim);
-                    if (inv_rho) interactionRhoY<<<dim.dg, dim.db>>>(k_rho, vy, dsy, ndt, dim);
-                    if (inv_mu) interactionMuY<<<dim.dg, dim.db>>>(k_mu, dvydx, dvydx_fw, dvydz, dvydz_fw, ndt, dim);
+					divVY<<<dim.dg, dim.db>>>(dvydx, dvydz, uy, dx, dz, dim);
+					divVY<<<dim.dg, dim.db>>>(dvydx_fw, dvydz_fw, dsy, dx, dz, dim);
+					host::toDevice(dsy, vy_forward[isfe], dim);
+					if (inv_rho) interactionRhoY<<<dim.dg, dim.db>>>(k_rho, vy, dsy, ndt, dim);
+					if (inv_mu) interactionMuY<<<dim.dg, dim.db>>>(k_mu, dvydx, dvydx_fw, dvydz, dvydz_fw, ndt, dim);
 				}
 				if (psv) {
 					host::toDevice(dsx, ux_forward[isfe], dim);
-                    host::toDevice(dsz, uz_forward[isfe], dim);
-                    divVXZ<<<dim.dg, dim.db>>>(dvxdx, dvxdz, dvzdx, dvzdz, ux, uz, dx, dz, dim);
-                    divVXZ<<<dim.dg, dim.db>>>(dvxdx_fw, dvxdz_fw, dvzdx_fw, dvzdz_fw, dsx, dsz, dx, dz, dim);
+					host::toDevice(dsz, uz_forward[isfe], dim);
+					divVXZ<<<dim.dg, dim.db>>>(dvxdx, dvxdz, dvzdx, dvzdz, ux, uz, dx, dz, dim);
+					divVXZ<<<dim.dg, dim.db>>>(dvxdx_fw, dvxdz_fw, dvzdx_fw, dvzdz_fw, dsx, dsz, dx, dz, dim);
 
-                    host::toDevice(dsx, vx_forward[isfe], dim);
-                    host::toDevice(dsz, vz_forward[isfe], dim);
-                    if (inv_rho) interactionRhoXZ<<<dim.dg, dim.db>>>(k_rho, vx, dsx, vz, dsz, ndt, dim);
-                    if (inv_mu) interactionMuXZ<<<dim.dg, dim.db>>>(k_mu, dvxdx, dvxdx_fw, dvxdz, dvxdz_fw, dvzdx, dvzdx_fw, dvzdz, dvzdz_fw, ndt, dim);
-                    if (inv_lambda) interactionLambdaXZ<<<dim.dg, dim.db>>>(k_lambda, dvxdx, dvxdx_fw, dvzdz, dvzdz_fw, ndt, dim);
+					host::toDevice(dsx, vx_forward[isfe], dim);
+					host::toDevice(dsz, vz_forward[isfe], dim);
+					if (inv_rho) interactionRhoXZ<<<dim.dg, dim.db>>>(k_rho, vx, dsx, vz, dsz, ndt, dim);
+					if (inv_mu) interactionMuXZ<<<dim.dg, dim.db>>>(k_mu, dvxdx, dvxdx_fw, dvxdz, dvxdz_fw, dvzdx, dvzdx_fw, dvzdz, dvzdz_fw, ndt, dim);
+					if (inv_lambda) interactionLambdaXZ<<<dim.dg, dim.db>>>(k_lambda, dvxdx, dvxdx_fw, dvzdz, dvzdz_fw, ndt, dim);
 				}
 			}
 
