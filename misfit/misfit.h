@@ -20,12 +20,12 @@ public:
 			solver->initKernels();
 		}
 		if(!solver->sh){
-	        device::init(solver->adstf_y, 0.0f, dim);
-	    }
-	    if(!solver->psv){
-	        device::init(solver->adstf_x, 0.0f, dim);
-	        device::init(solver->adstf_z, 0.0f, dim);
-	    }
+			device::init(solver->adstf_y, 0.0f, dim);
+		}
+		if(!solver->psv){
+			device::init(solver->adstf_x, 0.0f, dim);
+			device::init(solver->adstf_z, 0.0f, dim);
+		}
 		for (size_t isrc = 0; isrc < nsrc; isrc++) {
 			solver->runForward(isrc);
 			for (size_t irec = 0; irec < nrec; irec++) {
@@ -52,10 +52,10 @@ public:
 	void importTraces(size_t isrc, string &path) {
 		size_t &nrec = solver->nrec, &nt = solver->nt, &trace_type = solver->trace_type;
 
-	    int header1[28];
-	    short int header2[2];
-	    short int header3[2];
-	    float header4[30];
+		int header1[28];
+		short int header2[2];
+		short int header3[2];
+		float header4[30];
 
 		float *buffer = host::create(nt * nrec);
 		auto filename = [&](string comp) {
@@ -69,10 +69,10 @@ public:
 			std::ifstream infile(filename(comp), std::ifstream::binary);
 			for (size_t ir = 0; ir < nrec; ir++) {
 				infile.read(reinterpret_cast<char*>(header1), 28 * sizeof(int));
-	            infile.read(reinterpret_cast<char*>(header2), 2 * sizeof(short int));
-	            infile.read(reinterpret_cast<char*>(header3), 2 * sizeof(short int));
-	            infile.read(reinterpret_cast<char*>(header4), 30 * sizeof(float));
-	            infile.read(reinterpret_cast<char*>(buffer + ir * nt), nt * sizeof(float));
+				infile.read(reinterpret_cast<char*>(header2), 2 * sizeof(short int));
+				infile.read(reinterpret_cast<char*>(header3), 2 * sizeof(short int));
+				infile.read(reinterpret_cast<char*>(header4), 30 * sizeof(float));
+				infile.read(reinterpret_cast<char*>(buffer + ir * nt), nt * sizeof(float));
 			}
 			infile.close();
 			host::toDevice(data, buffer, nt * nrec);
@@ -147,7 +147,7 @@ public:
 			}
 		}
 
-        solver->importModel(false);
+		solver->importModel(false);
 	};
 	virtual ~Misfit() {};
 };

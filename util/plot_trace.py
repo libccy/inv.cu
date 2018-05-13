@@ -32,8 +32,8 @@ if __name__ == '__main__':
 	  SYNTAX
 		  plot_trace.py  folder_name  component_name||file_name  (source id)
 		  e.g. ./plot_trace.py output vx
-		       ./plot_trace.py output vx 0
-		       ./plot_trace.py output vx_000000.su
+			   ./plot_trace.py output vx 0
+			   ./plot_trace.py output vx_000000.su
 	"""
 	istr = ''
 	if len(sys.argv) > 3:

@@ -53,21 +53,21 @@ protected:
 		float *host_rec_z = host::create(nrec, rec_z);
 
 		short int dt_int2;
-	    if(dt * 1e6 > pow(2, 15)){
-	        dt_int2 = 0;
-	    }
-	    else{
-	        dt_int2 = dt * 1e6;
-	    }
+		if(dt * 1e6 > pow(2, 15)){
+			dt_int2 = 0;
+		}
+		else{
+			dt_int2 = dt * 1e6;
+		}
 
 		header1[18] = std::round(xs);
-	    header1[19] = std::round(zs);
+		header1[19] = std::round(zs);
 
-	    header2[0] = 0;
-	    header2[1] = nt;
+		header2[0] = 0;
+		header2[1] = nt;
 
-	    header3[0] = dt_int2;
-	    header3[1] = 0;
+		header3[0] = dt_int2;
+		header3[1] = 0;
 
 		auto filename = [&](string comp) {
 			string istr = std::to_string(isrc);
@@ -86,10 +86,10 @@ protected:
 				if(nrec > 1) header4[1] = host_rec_x[1] - host_rec_x[0];
 
 				outfile.write(reinterpret_cast<char*>(header1), 28 * sizeof(int));
-		        outfile.write(reinterpret_cast<char*>(header2), 2 * sizeof(short int));
-		        outfile.write(reinterpret_cast<char*>(header3), 2 * sizeof(short int));
-		        outfile.write(reinterpret_cast<char*>(header4), 30 * sizeof(float));
-		        outfile.write(reinterpret_cast<char*>(data + ir * nt), nt * sizeof(float));
+				outfile.write(reinterpret_cast<char*>(header2), 2 * sizeof(short int));
+				outfile.write(reinterpret_cast<char*>(header3), 2 * sizeof(short int));
+				outfile.write(reinterpret_cast<char*>(header4), 30 * sizeof(float));
+				outfile.write(reinterpret_cast<char*>(data + ir * nt), nt * sizeof(float));
 			}
 			outfile.close();
 			free(data);
@@ -205,13 +205,13 @@ public:
 		}
 
 		if (adj) {
-	        inv_lambda = (bool) config->i["inv_lambda"];
-	        inv_mu = (bool) config->i["inv_mu"];
-	        inv_rho = (bool) config->i["inv_rho"];
+			inv_lambda = (bool) config->i["inv_lambda"];
+			inv_mu = (bool) config->i["inv_mu"];
+			inv_rho = (bool) config->i["inv_rho"];
 
-	        adstf_x = device::create(nrec * nt);
-	        adstf_y = device::create(nrec * nt);
-	        adstf_z = device::create(nrec * nt);
+			adstf_x = device::create(nrec * nt);
+			adstf_y = device::create(nrec * nt);
+			adstf_z = device::create(nrec * nt);
 		}
 
 		if (sh) {

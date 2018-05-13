@@ -26,16 +26,16 @@ def read_fortran(filename):
 
 
 def write_fortran(filename, data):
-    """ Reads Fortran style binary data and returns a numpy array.
-    """
-    with open(filename, 'wb') as f:
-        # write size of record
-        f.seek(0)
-        np.array([len(data)], dtype='int32').tofile(f)
+	""" Reads Fortran style binary data and returns a numpy array.
+	"""
+	with open(filename, 'wb') as f:
+		# write size of record
+		f.seek(0)
+		np.array([len(data)], dtype='int32').tofile(f)
 
 		# write contents of record
-        f.seek(4)
-        data.tofile(f)
+		f.seek(4)
+		data.tofile(f)
 
 
 def mesh2grid(v, x, z):

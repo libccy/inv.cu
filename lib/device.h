@@ -13,18 +13,18 @@ public:
 	int size;
 
 	__device__ void operator()(int &i, int &j, int &k) {
-	    k = this->idx();
-	    if (nz == db) {
-	        i = blockIdx.x;
-	        j = threadIdx.x;
-	    }
-	    else {
-	        j = k % nz;
-	        i = (k - j) / nz;
-	    }
+		k = this->idx();
+		if (nz == db) {
+			i = blockIdx.x;
+			j = threadIdx.x;
+		}
+		else {
+			j = k % nz;
+			i = (k - j) / nz;
+		}
 	};
 	__device__ int operator()(int di = 0, int dj = 0) {
-	    return this->idx() + this->idx(di, dj);
+		return this->idx() + this->idx(di, dj);
 	};
 	__device__ int idx() {
 		return blockIdx.x * db + threadIdx.x;
@@ -175,13 +175,13 @@ namespace device {
 		return fabs(get(a, index - 1));
 	}
 	float norm(float *a, size_t len){
-        float norm_a = 0;
-        cublasSnrm2_v2(cublas_handle, len, a, 1, &norm_a);
-        return norm_a;
-    }
-    float dot(float *a, float *b, size_t len){
-        float dot_ab = 0;
-        cublasSdot_v2(cublas_handle, len, a, 1, b, 1, &dot_ab);
-        return dot_ab;
-    }
+		float norm_a = 0;
+		cublasSnrm2_v2(cublas_handle, len, a, 1, &norm_a);
+		return norm_a;
+	}
+	float dot(float *a, float *b, size_t len){
+		float dot_ab = 0;
+		cublasSdot_v2(cublas_handle, len, a, 1, b, 1, &dot_ab);
+		return dot_ab;
+	}
 }

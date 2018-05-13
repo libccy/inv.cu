@@ -33,7 +33,7 @@ int main(int argc, const char *argv[]){
 	switch (config->i["mode"]) {
 		case 0: {
 			Solver *solver = module::solver(config->i["solver"]);
-	        Filter *filter = module::filter(config->i["filter"]);
+			Filter *filter = module::filter(config->i["filter"]);
 			Misfit *misfit = module::misfit(config->i["misfit"]);
 			Optimizer *optimizer = module::optimizer(config->i["optimizer"]);
 
