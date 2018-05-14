@@ -379,7 +379,10 @@ public:
 		read("x", xmax);
 		read("z", zmax);
 
-		size_t nx = std::round(sqrt(model_npt * xmax / zmax));
+		float a = zmax / xmax;
+		float b = a + 1;
+		float c = 1 - (int)model_npt;
+		size_t nx = std::round((-b + sqrt(b * b - 4 * a * c)) / (2 * a)) + 1;
 		size_t nz = std::round(model_npt / nx);
 		dim.init(nx, nz);
 		dx = xmax / (nx - 1);
