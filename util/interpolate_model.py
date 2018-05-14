@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 
 import sys
-import os
 from os import makedirs
 from os.path import exists
 
 import numpy as np
-import pylab
 import scipy.interpolate
 
 
@@ -121,7 +119,7 @@ if __name__ == '__main__':
 	  http://tigress-web.princeton.edu/~rmodrak/visualize/plot2d
 
 	  SYNTAX
-		  ./interpolate.py  input_dir output_dir
+		  ./interpolate_model.py  input_dir output_dir
 	"""
 	if not exists(sys.argv[2]):
 		makedirs(sys.argv[2])

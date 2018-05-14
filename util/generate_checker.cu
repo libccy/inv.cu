@@ -8,9 +8,7 @@ namespace _generateChecker {
 		float dvp, float dvs, float drho,
 		float *x, float *z,
 		float *vp, float *vs, float *rho, Dim dim){
-		int i, j, k;
-		dim(i, j, k);
-		if (k >= dim.size) return;
+		int i, j, k; if (dim(i, j, k)) return;
 		x[k] = i * dx;
 		z[k] = j * dz;
 		float wx = dx * nx * 2 / 3 / (cx + 1);

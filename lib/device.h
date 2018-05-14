@@ -12,8 +12,9 @@ public:
 	int db;
 	int size;
 
-	__device__ void operator()(int &i, int &j, int &k) {
+	__device__ bool operator()(int &i, int &j, int &k) {
 		k = this->idx();
+		if (k >= this->size) return true;
 		if (nz == db) {
 			i = blockIdx.x;
 			j = threadIdx.x;
@@ -22,8 +23,13 @@ public:
 			j = k % nz;
 			i = (k - j) / nz;
 		}
+		return false;
 	};
-	__device__ int operator()(int di = 0, int dj = 0) {
+	__device__ bool operator()(int &k) {
+		k = this->idx();
+		return k >= this->size;
+	};
+	__device__ int operator()(int di, int dj) {
 		return this->idx() + this->idx(di, dj);
 	};
 	__device__ int idx() {
@@ -119,12 +125,12 @@ namespace device {
 
 	template<typename T = float>
 	__global__ void _copy(T *data, T *source, Dim dim) {
-		int k = dim(); if (k >= dim.size) return;
+		int k; if (dim(k)) return;
 		data[k] = source[k];
 	}
 	template<typename T = float>
 	__global__ void _init(T *data, T value, Dim dim){
-		int k = dim(); if (k >= dim.size) return;
+		int k; if (dim(k)) return;
 		data[k] = value;
 	}
 	template<typename T = float>
@@ -149,15 +155,15 @@ namespace device {
 	}
 
 	__global__ void _calc(float *c, float ka, float *a, Dim dim) {
-		int k = dim(); if (k >= dim.size) return;
+		int k; if (dim(k)) return;
 		c[k] = ka * a[k];
 	}
 	__global__ void _calc(float *c, float ka, float *a, float kb, float *b, Dim dim) {
-		int k = dim(); if (k >= dim.size) return;
+		int k; if (dim(k)) return;
 		c[k] = ka * a[k] + kb * b[k];
 	}
 	__global__ void _calc(float *c, float *a, float *b, Dim dim) {
-		int k = dim(); if (k >= dim.size) return;
+		int k; if (dim(k)) return;
 		c[k] = a[k] * b[k];
 	}
 	void calc(float *c, float ka, float *a, Dim &dim) {
